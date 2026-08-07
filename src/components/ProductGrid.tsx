@@ -56,7 +56,7 @@ export function ProductGrid() {
               className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3"
             >
               {items.map((product) => (
-                <motion.div key={product.id} variants={item}>
+                <motion.div key={product.id} variants={item} className="h-full">
                   <ProductCard product={product} />
                 </motion.div>
               ))}

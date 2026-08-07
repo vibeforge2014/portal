@@ -1,12 +1,13 @@
 /**
- * App icons rendered as SF-Symbol-style SVG glyphs inside an Apple "squircle"
- * container. Each glyph is hand-drawn to telegraph the product's purpose
- * (Familiarity §16#4) — a battery for ChargePilot, a waveform for MinuteFlow,
- * etc. — instead of a meaningless letter.
+ * App icons. Two rendering modes, unified through one squircle container:
  *
- * The container applies the brand gradient, a soft top highlight (light
- * catching a physical material, §12), and a deeper bottom edge, so the icon
- * reads as a real object rather than a flat colored square.
+ *  - **Image mode** (`iconSrc`): the product's real app-icon PNG is clipped to
+ *    the Apple squircle shape. These icons already ship their own background
+ *    and glyph, so we only mask the corners — no gradient, no highlight (those
+ *    would fight the icon's own design).
+ *  - **Glyph mode** (`icon`): a hand-drawn SF-Symbol-style SVG on a brand
+ *    gradient, with top specular highlight and inset shadow — used when no real
+ *    icon asset exists yet (ChargePilot, TailTalk).
  */
 
 export type IconKey =
@@ -90,20 +91,47 @@ const GLYPHS: Record<IconKey, React.ReactNode> = {
 export function AppIcon({
   icon,
   gradient,
-  size = 56,
+  iconSrc,
+  size = 60,
 }: {
   icon: IconKey;
   gradient: { from: string; to: string };
+  iconSrc?: string;
   size?: number;
 }) {
-  const id = `g-${icon}-${gradient.from.replace("#", "")}-${gradient.to.replace("#", "")}`;
+  const radius = size * 0.235; // Apple squircle ratio (~23.5%)
+
+  // Image mode: real app-icon PNG, masked to the squircle.
+  // next/image's basePath handling under static export is unreliable, so we
+  // resolve the public asset path manually against the configured basePath.
+  if (iconSrc) {
+    const base = process.env.NEXT_PUBLIC_BASEPATH ?? "";
+    return (
+      <span
+        className="relative inline-flex shrink-0 items-center justify-center overflow-hidden"
+        style={{
+          width: size,
+          height: size,
+          borderRadius: radius,
+          boxShadow:
+            "0 8px 20px -6px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.3)",
+        }}
+        aria-hidden
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={`${base}/${iconSrc}`} alt="" width={size} height={size} className="block" />
+      </span>
+    );
+  }
+
+  // Glyph mode: SVG glyph on a brand-gradient squircle.
   return (
     <span
       className="relative inline-flex shrink-0 items-center justify-center"
       style={{
         width: size,
         height: size,
-        borderRadius: size * 0.235, // Apple squircle ratio (~23.5%)
+        borderRadius: radius,
         backgroundImage: `linear-gradient(145deg, ${gradient.from}, ${gradient.to})`,
         boxShadow:
           "0 8px 20px -6px rgba(0,0,0,0.45), inset 0 1.5px 1px rgba(255,255,255,0.45), inset 0 -2px 4px rgba(0,0,0,0.18)",
@@ -114,7 +142,7 @@ export function AppIcon({
       <span
         className="pointer-events-none absolute inset-0"
         style={{
-          borderRadius: size * 0.235,
+          borderRadius: radius,
           background:
             "linear-gradient(180deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0) 55%)",
         }}

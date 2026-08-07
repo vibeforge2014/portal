@@ -33,7 +33,7 @@ export function ProductCard({ product }: { product: Product }) {
       whileHover={lift}
       whileTap={{ scale: 0.985 }}
       transition={{ type: "spring", stiffness: 400, damping: 30, mass: 0.6 }}
-      className="group relative flex flex-col rounded-3xl p-7 no-underline
+      className="group relative flex h-full flex-col rounded-3xl p-7 no-underline
         bg-[rgb(var(--card))] border border-[rgba(var(--hairline),0.1)]
         shadow-[0_1px_3px_rgba(var(--card-shadow),0.08),0_10px_30px_-16px_rgba(var(--card-shadow),0.22)]
         transition-colors overflow-hidden"
@@ -50,7 +50,7 @@ export function ProductCard({ product }: { product: Product }) {
 
       {/* App icon: real squircle with SF-Symbol glyph. */}
       <div className="relative mb-5">
-        <AppIcon icon={product.icon} gradient={product.accent} size={60} />
+        <AppIcon icon={product.icon} gradient={product.accent} iconSrc={product.iconSrc} size={60} />
       </div>
 
       {/* Eyebrow category */}
@@ -68,13 +68,13 @@ export function ProductCard({ product }: { product: Product }) {
       </p>
 
       {/* Description */}
-      <p className="mt-3 text-sm text-[rgb(var(--fg-secondary))] leading-relaxed flex-1">
+      <p className="mt-3 text-sm text-[rgb(var(--fg-secondary))] leading-relaxed">
         {product.description}
       </p>
 
       {/* Feature chips (only when the site actually publishes features) */}
       {product.features.length > 0 && (
-        <ul className="mt-4 flex flex-wrap gap-1.5">
+        <ul className="mt-4 mb-6 flex flex-wrap gap-1.5">
           {product.features.slice(0, 3).map((f) => (
             <li
               key={f}
@@ -88,7 +88,7 @@ export function ProductCard({ product }: { product: Product }) {
       )}
 
       {/* Platform badges + arrow */}
-      <div className="mt-6 flex items-center justify-between border-t border-[rgba(var(--hairline),0.08)] pt-4">
+      <div className="mt-auto flex items-center justify-between border-t border-[rgba(var(--hairline),0.08)] pt-4">
         <div className="flex gap-1.5">
           {product.platforms.map((p) => (
             <span
