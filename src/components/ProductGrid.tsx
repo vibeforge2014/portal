@@ -40,20 +40,33 @@ export function ProductGrid() {
         const items = products.filter((p) => p.group === (group.id as ProductGroup));
         if (items.length === 0) return null;
         return (
-          <section key={group.id} className="mb-16 last:mb-0">
-            <div className="mb-6">
-              <h2 className="text-2xl font-semibold tracking-tight text-[rgb(var(--fg))]">
-                {group.title}
-              </h2>
-              <p className="mt-1 text-sm text-[rgb(var(--fg-secondary))]">
-                {group.subtitle}
-              </p>
+          <section key={group.id} className="mb-20 last:mb-0">
+            <div className="mb-8 flex items-end justify-between gap-6">
+              <div>
+                <p className="eyebrow mb-2">{group.subtitle}</p>
+                <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-[rgb(var(--fg))]">
+                  {group.title}
+                  <span className="ml-3 text-[rgb(var(--fg-tertiary))] font-normal">
+                    · {items.length}
+                  </span>
+                </h2>
+              </div>
+              {/* Decorative hairline that "separates without dividing" (§12) */}
+              <div className="hidden flex-1 sm:block">
+                <div
+                  className="h-px w-full"
+                  style={{
+                    background:
+                      "linear-gradient(90deg, rgba(var(--hairline),0.18), rgba(var(--hairline),0) 80%)",
+                  }}
+                />
+              </div>
             </div>
             <motion.div
               variants={container}
               initial="hidden"
               animate="show"
-              className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3"
+              className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
             >
               {items.map((product) => (
                 <motion.div key={product.id} variants={item} className="h-full">
