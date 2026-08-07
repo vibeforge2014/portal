@@ -2,6 +2,8 @@
 // All fields are derived from the live GitHub Pages sites (verified 2026-08-07).
 // When a site's content is sparse (e.g. TuneSync), we say so plainly rather than invent features.
 
+import type { IconKey } from "@/components/AppIcon";
+
 export type Platform = "macOS" | "iOS" | "Apple TV" | "Web";
 
 export type ProductGroup = "apps" | "tools";
@@ -25,8 +27,8 @@ export interface Product {
   group: ProductGroup;
   /** Brand accent, expressed as a CSS gradient pair for the icon tile. */
   accent: { from: string; to: string };
-  /** The single character shown on the icon tile. */
-  glyph: string;
+  /** SF-Symbol-style glyph shown inside the squircle icon. */
+  icon: IconKey;
   /** 3–5 highlight features. Empty array when the site itself reveals none. */
   features: string[];
   /** True when the live site has little/no published content yet. */
@@ -47,7 +49,7 @@ export const products: Product[] = [
     platforms: ["macOS"],
     group: "apps",
     accent: { from: "#34C759", to: "#30B0C7" },
-    glyph: "C",
+    icon: "battery",
     features: [
       "可调充电上限,稳定电量在设定范围",
       "温度与健康守护,过热自动停充",
@@ -65,7 +67,7 @@ export const products: Product[] = [
     platforms: ["macOS"],
     group: "apps",
     accent: { from: "#BF5AF2", to: "#7C4DFF" },
-    glyph: "M",
+    icon: "waveform",
     features: ["音频录制", "语音转文字", "实时纪要与摘要生成"],
   },
   {
@@ -78,7 +80,7 @@ export const products: Product[] = [
     platforms: ["iOS"],
     group: "apps",
     accent: { from: "#0A84FF", to: "#5E5CE6" },
-    glyph: "S",
+    icon: "terminal",
     features: [
       "集中查看 CPU、内存、磁盘与网络状态",
       "原生 SSH 终端,保存常用命令片段",
@@ -96,7 +98,7 @@ export const products: Product[] = [
     platforms: ["iOS", "Apple TV"],
     group: "apps",
     accent: { from: "#40C8E0", to: "#30B0C7" },
-    glyph: "T",
+    icon: "play",
     features: [
       "M3U/M3U8 列表导入,频道搜索与分组",
       "列表播放、观看历史与最近频道",
@@ -114,7 +116,7 @@ export const products: Product[] = [
     platforms: ["iOS"],
     group: "apps",
     accent: { from: "#FF9F0A", to: "#FF6B00" },
-    glyph: "T",
+    icon: "remote",
     features: [
       "局域网无线配对 Android 设备",
       "方向键与触控板遥控",
@@ -132,7 +134,7 @@ export const products: Product[] = [
     platforms: ["iOS"],
     group: "apps",
     accent: { from: "#FF375F", to: "#FF2D92" },
-    glyph: "T",
+    icon: "sync",
     features: [],
     draft: true,
   },
@@ -146,7 +148,7 @@ export const products: Product[] = [
     platforms: ["Web"],
     group: "tools",
     accent: { from: "#5E5CE6", to: "#3F37C9" },
-    glyph: "T",
+    icon: "code",
     features: [
       "Cloudflare D1 与 Drizzle 集成",
       "vite.config.ts 本地模拟绑定",

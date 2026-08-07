@@ -2,6 +2,7 @@
 
 import { motion, useReducedMotion } from "motion/react";
 import type { Product } from "@/data/products";
+import { AppIcon } from "./AppIcon";
 
 /**
  * A single product card. Rendered as a real <a> so it is keyboard-focusable and
@@ -13,7 +14,6 @@ import type { Product } from "@/data/products";
  */
 export function ProductCard({ product }: { product: Product }) {
   const reduceMotion = useReducedMotion();
-  const gradient = `linear-gradient(135deg, ${product.accent.from}, ${product.accent.to})`;
 
   // Hover lift: translate up + deepen shadow. Symmetric on enter/exit (§7).
   const lift = reduceMotion
@@ -21,7 +21,7 @@ export function ProductCard({ product }: { product: Product }) {
     : {
         y: -6,
         boxShadow:
-          "0 18px 40px -12px rgba(var(--card-shadow), 0.28), 0 4px 12px -4px rgba(var(--card-shadow), 0.16)",
+          "0 22px 48px -16px rgba(var(--card-shadow), 0.32), 0 6px 16px -6px rgba(var(--card-shadow), 0.18)",
       };
 
   return (
@@ -33,20 +33,24 @@ export function ProductCard({ product }: { product: Product }) {
       whileHover={lift}
       whileTap={{ scale: 0.985 }}
       transition={{ type: "spring", stiffness: 400, damping: 30, mass: 0.6 }}
-      className="group relative flex flex-col rounded-2xl p-6 no-underline
+      className="group relative flex flex-col rounded-3xl p-7 no-underline
         bg-[rgb(var(--card))] border border-[rgba(var(--hairline),0.1)]
-        shadow-[0_1px_3px_rgba(var(--card-shadow),0.08),0_8px_24px_-12px_rgba(var(--card-shadow),0.18)]
-        transition-colors"
+        shadow-[0_1px_3px_rgba(var(--card-shadow),0.08),0_10px_30px_-16px_rgba(var(--card-shadow),0.22)]
+        transition-colors overflow-hidden"
     >
-      {/* Icon tile: brand-gradient glyph. Material weight via gradient + soft shadow (§12). */}
-      <div
-        className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl text-white text-xl font-semibold
-          shadow-[0_6px_16px_-6px_rgba(0,0,0,0.4)]
-          transition-transform duration-300 group-hover:scale-105"
-        style={{ backgroundImage: gradient }}
+      {/* Ambient brand glow that blooms behind the card on hover (depth, §12). */}
+      <span
+        className="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full opacity-0 blur-3xl
+          transition-opacity duration-500 group-hover:opacity-40"
+        style={{
+          background: `radial-gradient(circle, ${product.accent.from}, transparent 70%)`,
+        }}
         aria-hidden
-      >
-        {product.glyph}
+      />
+
+      {/* App icon: real squircle with SF-Symbol glyph. */}
+      <div className="relative mb-5">
+        <AppIcon icon={product.icon} gradient={product.accent} size={60} />
       </div>
 
       {/* Eyebrow category */}
@@ -59,7 +63,7 @@ export function ProductCard({ product }: { product: Product }) {
       <h3 className="text-xl font-semibold tracking-tight text-[rgb(var(--fg))]">
         {product.name}
       </h3>
-      <p className="mt-1 text-[15px] text-[rgb(var(--fg-secondary))] leading-snug">
+      <p className="mt-1.5 text-[15px] text-[rgb(var(--fg-secondary))] leading-snug">
         {product.tagline}
       </p>
 
@@ -74,7 +78,7 @@ export function ProductCard({ product }: { product: Product }) {
           {product.features.slice(0, 3).map((f) => (
             <li
               key={f}
-              className="rounded-md bg-[rgba(var(--hairline),0.06)] px-2 py-1
+              className="rounded-lg bg-[rgba(var(--hairline),0.06)] px-2.5 py-1
                 text-[11px] text-[rgb(var(--fg-secondary))] leading-none"
             >
               {f}
@@ -83,8 +87,8 @@ export function ProductCard({ product }: { product: Product }) {
         </ul>
       )}
 
-      {/* Platform badges */}
-      <div className="mt-5 flex items-center justify-between border-t border-[rgba(var(--hairline),0.08)] pt-3">
+      {/* Platform badges + arrow */}
+      <div className="mt-6 flex items-center justify-between border-t border-[rgba(var(--hairline),0.08)] pt-4">
         <div className="flex gap-1.5">
           {product.platforms.map((p) => (
             <span
