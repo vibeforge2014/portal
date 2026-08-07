@@ -147,25 +147,25 @@ export const products: Product[] = [
   },
   {
     id: "tailtalk",
-    name: "TailTalk Starter",
-    category: "全栈脚手架模板",
-    tagline: "A clean full-stack starter running on vinext",
-    description: "面向开发者的全栈起步模板,内置 Cloudflare 绑定本地模拟与可选的 ChatGPT 登录。",
+    name: "TailTalk",
+    category: "iOS 宠物情绪翻译",
+    tagline: "更细心地理解它此刻的感受",
+    description: "分析宠物的声音与行为,给出情绪倾向、潜在意图与安全的互动建议——本地优先,诚实不夸大。",
     url: `${SITE}/tailtalk-site/`,
-    platforms: ["Web"],
-    group: "tools",
+    platforms: ["iOS"],
+    group: "apps",
     accent: { from: "#5E5CE6", to: "#3F37C9" },
     icon: "code",
+    iconSrc: "icons/tailtalk.png",
     features: [
-      "Cloudflare D1 与 Drizzle 集成",
-      "vite.config.ts 本地模拟绑定",
-      "可选的 ChatGPT 登录(SIWC)辅助",
-      "Drizzle 数据库迁移生成",
+      "双向交流:翻译人声为低刺激宠物声音",
+      "个性化学习:设备端声纹特征建专属档案",
+      "本地优先:录音与档案从不上传",
+      "TailTalk Plus:无限互动与行为趋势周报",
     ],
   },
 ];
 
 export const groups: { id: ProductGroup; title: string; subtitle: string }[] = [
   { id: "apps", title: "原生应用", subtitle: "为 macOS、iOS 与 Apple TV 打造" },
-  { id: "tools", title: "开发者工具", subtitle: "脚手架与模板" },
 ];
