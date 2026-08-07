@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "deploy": "next build && gh-pages -d out -t true"
+    "deploy": "next build && node -e \"require('fs').writeFileSync('out/.nojekyll','')\" && gh-pages -d out --dotfiles"
   },
   "dependencies": {
     "motion": "^11.15.0",
