@@ -19,7 +19,7 @@ export interface Product {
   tagline: string;
   /** One-sentence description of what it does. */
   description: string;
-  /** Full GitHub Pages URL. */
+  /** Public product-site URL. */
   url: string;
   /** Platforms the product runs on. */
   platforms: Platform[];
@@ -37,8 +37,15 @@ export interface Product {
   draft?: boolean;
 }
 
-// Base origin for all sibling GitHub Pages sites under this account.
-const SITE = "https://vibeforge2014.github.io";
+const SITE = {
+  chargepilot: "/chargepilot/",
+  minuteflow: "/minuteflow/",
+  serverhub: "/serverhub/",
+  tellyra: "/tellyra/",
+  tivon: "/tivon/",
+  tunesync: "/tunesync/",
+  tailtalk: "/tailtalk/",
+} as const;
 
 export const products: Product[] = [
   {
@@ -47,7 +54,7 @@ export const products: Product[] = [
     category: "macOS 电池管理",
     tagline: "掌控 Mac 的每一次充电",
     description: "原生电池控制工具:管理充电上限、监控温度、追踪实时能耗,全程本地处理。",
-    url: `${SITE}/chargepilot-site/`,
+    url: SITE.chargepilot,
     platforms: ["macOS"],
     group: "apps",
     accent: { from: "#34C759", to: "#30B0C7" },
@@ -65,7 +72,7 @@ export const products: Product[] = [
     category: "录音 · 转录 · 纪要",
     tagline: "录音、转录与实时纪要",
     description: "录音并实时将语音转为文字,自动生成会议纪要与摘要。",
-    url: `${SITE}/meeting-assistant-site/`,
+    url: SITE.minuteflow,
     platforms: ["macOS"],
     group: "apps",
     accent: { from: "#BF5AF2", to: "#7C4DFF" },
@@ -79,7 +86,7 @@ export const products: Product[] = [
     category: "iOS SSH 服务器管理",
     tagline: "你的服务器,随时触手可及",
     description: "连接主机、监控系统性能、用 SFTP 管理文件,并使用原生 SSH 终端。",
-    url: `${SITE}/serverhub-support/`,
+    url: SITE.serverhub,
     platforms: ["iOS"],
     group: "apps",
     accent: { from: "#0A84FF", to: "#5E5CE6" },
@@ -98,7 +105,7 @@ export const products: Product[] = [
     category: "iOS · Apple TV IPTV",
     tagline: "你的播放清单,随时触手可及",
     description: "手动导入或自动更新 IPTV 播放列表,并支持 AirPlay 投屏播放。",
-    url: `${SITE}/tellyra-support/`,
+    url: SITE.tellyra,
     platforms: ["iOS", "Apple TV"],
     group: "apps",
     accent: { from: "#40C8E0", to: "#30B0C7" },
@@ -117,7 +124,7 @@ export const products: Product[] = [
     category: "iOS Android TV 遥控",
     tagline: "把电视控制与 ADB 工具装进口袋",
     description: "通过局域网无线控制 Android TV 与 Android 设备:遥控、输入、截屏、传文件。",
-    url: `${SITE}/tivon-support/`,
+    url: SITE.tivon,
     platforms: ["iOS"],
     group: "apps",
     accent: { from: "#FF9F0A", to: "#FF6B00" },
@@ -136,7 +143,7 @@ export const products: Product[] = [
     category: "即将上线",
     tagline: "敬请期待",
     description: "TuneSync 的产品站点已就位,详细内容仍在准备中。",
-    url: `${SITE}/TuneSync-Site/`,
+    url: SITE.tunesync,
     platforms: ["iOS"],
     group: "apps",
     accent: { from: "#FF375F", to: "#FF2D92" },
@@ -151,7 +158,7 @@ export const products: Product[] = [
     category: "iOS 宠物情绪翻译",
     tagline: "更细心地理解它此刻的感受",
     description: "分析宠物的声音与行为,给出情绪倾向、潜在意图与安全的互动建议——本地优先,诚实不夸大。",
-    url: `${SITE}/tailtalk-site/`,
+    url: SITE.tailtalk,
     platforms: ["iOS"],
     group: "apps",
     accent: { from: "#5E5CE6", to: "#3F37C9" },
