@@ -21,20 +21,6 @@ await visit(path.join(root, "minuteflow"), (text) =>
   text.replaceAll("/meeting-assistant-site/", "/minuteflow/"),
 );
 
-await visit(path.join(root, "tailtalk"), (text) => {
-  let result = text;
-  for (const quote of ['"', "'", "`"]) {
-    for (const route of ["en", "privacy", "support", "terms"]) {
-      result = result.replaceAll(`${quote}/${route}`, `${quote}/tailtalk/${route}`);
-    }
-    for (const asset of ["app-icon.png", "og.png"]) {
-      result = result.replaceAll(`${quote}/${asset}`, `${quote}/tailtalk/${asset}`);
-    }
-    result = result.replaceAll(`${quote}/${quote}`, `${quote}/tailtalk/${quote}`);
-  }
-  return result;
-});
-
 const requiredFiles = [
   "index.html",
   "tivon/index.html",
