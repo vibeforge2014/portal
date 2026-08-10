@@ -17,9 +17,17 @@ async function visit(directory, transform) {
   }
 }
 
-await visit(path.join(root, "minuteflow"), (text) =>
-  text.replaceAll("/meeting-assistant-site/", "/minuteflow/"),
-);
+await visit(path.join(root, "minuteflow"), (text, file) => {
+  let result = text.replaceAll("/meeting-assistant-site", "/minuteflow");
+  if (path.extname(file) === ".html") {
+    result = result
+      .replaceAll('src="./assets/', 'src="/minuteflow/assets/')
+      .replaceAll('href="./assets/', 'href="/minuteflow/assets/')
+      .replaceAll('href="./favicon.png"', 'href="/minuteflow/favicon.png"')
+      .replaceAll('href="./brand-mark.png"', 'href="/minuteflow/brand-mark.png"');
+  }
+  return result;
+});
 
 // Vinext exports TailTalk's App Router routes relative to the app root, but its
 // navigation bootstrap records the public mount path. Keep the RSC payload
