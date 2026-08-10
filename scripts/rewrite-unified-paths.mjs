@@ -21,6 +21,16 @@ await visit(path.join(root, "minuteflow"), (text) =>
   text.replaceAll("/meeting-assistant-site/", "/minuteflow/"),
 );
 
+// Vinext exports TailTalk's App Router routes relative to the app root, but its
+// navigation bootstrap records the public mount path. Keep the RSC payload
+// untouched and translate only that bootstrap pathname back to the app route.
+await visit(path.join(root, "tailtalk"), (text) =>
+  text.replace(
+    /(self\.__VINEXT_RSC_NAV__=\{"pathname":")\/tailtalk(?=\/)/,
+    "$1",
+  ),
+);
+
 const requiredFiles = [
   "index.html",
   "tivon/index.html",
