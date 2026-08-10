@@ -11,7 +11,7 @@ async function visit(directory, transform) {
       await visit(file, transform);
     } else if (textExtensions.has(path.extname(entry.name))) {
       const before = await fs.readFile(file, "utf8");
-      const after = await transform(before);
+      const after = await transform(before, file);
       if (after !== before) await fs.writeFile(file, after);
     }
   }
@@ -29,6 +29,15 @@ await visit(path.join(root, "tailtalk"), (text) =>
     /(self\.__VINEXT_RSC_NAV__=\{"pathname":")\/tailtalk(?=\/)/,
     "$1",
   ),
+);
+
+// TailTalk is fully static. Vinext's App Router client currently resolves
+// layouts against the domain root and crashes when hydrated below /tailtalk/.
+// Keep the server-rendered document and normal links, but omit hydration.
+await visit(path.join(root, "tailtalk"), (text, file) =>
+  path.extname(file) === ".html"
+    ? text.replaceAll(/<script\b[^>]*>[\s\S]*?<\/script>/g, "")
+    : text,
 );
 
 const requiredFiles = [
