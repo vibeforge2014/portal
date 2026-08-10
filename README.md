@@ -1,6 +1,6 @@
 # VibeForge Portal
 
-[vibeforge2014](https://github.com/vibeforge2014) 账号下 7 个 GitHub Pages 站点的**统一入口门户**。基于 Next.js(App Router)+ TypeScript + Tailwind CSS + Motion,遵循 Apple 设计规范(流体交互、材质深度、可访问性)。
+[vibeforge2014](https://github.com/vibeforge2014) 的 macOS 产品入口。ChargePilot 是当前唯一在售产品，MinuteFlow 暂不开放购买。基于 Next.js(App Router)+ TypeScript + Tailwind CSS + Motion。
 
 ## 收录的站点
 
@@ -8,11 +8,6 @@
 |------|------|------|
 | ChargePilot | macOS 电池管理 | https://vibeforge2014.github.io/chargepilot-site/ |
 | MinuteFlow | 录音·转录·纪要 | https://vibeforge2014.github.io/meeting-assistant-site/ |
-| ServerHub | iOS SSH 服务器管理 | https://vibeforge2014.github.io/serverhub-support/ |
-| Tellyra | iOS·Apple TV IPTV | https://vibeforge2014.github.io/tellyra-support/ |
-| Tivon | iOS Android TV 遥控 | https://vibeforge2014.github.io/tivon-support/ |
-| TuneSync | 即将上线 | https://vibeforge2014.github.io/TuneSync-Site/ |
-| TailTalk Starter | 全栈脚手架模板 | https://vibeforge2014.github.io/tailtalk-site/ |
 
 产品数据集中在 `src/data/products.ts`,新增或更新站点时只改这一个文件。
 

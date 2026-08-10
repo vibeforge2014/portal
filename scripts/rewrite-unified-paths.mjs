@@ -29,34 +29,10 @@ await visit(path.join(root, "minuteflow"), (text, file) => {
   return result;
 });
 
-// Vinext exports TailTalk's App Router routes relative to the app root, but its
-// navigation bootstrap records the public mount path. Keep the RSC payload
-// untouched and translate only that bootstrap pathname back to the app route.
-await visit(path.join(root, "tailtalk"), (text) =>
-  text.replace(
-    /(self\.__VINEXT_RSC_NAV__=\{"pathname":")\/tailtalk(?=\/)/,
-    "$1",
-  ),
-);
-
-// TailTalk is fully static. Vinext's App Router client currently resolves
-// layouts against the domain root and crashes when hydrated below /tailtalk/.
-// Keep the server-rendered document and normal links, but omit hydration.
-await visit(path.join(root, "tailtalk"), (text, file) =>
-  path.extname(file) === ".html"
-    ? text.replaceAll(/<script\b[^>]*>[\s\S]*?<\/script>/g, "")
-    : text,
-);
-
 const requiredFiles = [
   "index.html",
-  "tivon/index.html",
-  "tellyra/index.html",
-  "serverhub/index.html",
-  "tailtalk/index.html",
   "chargepilot/index.html",
   "minuteflow/index.html",
-  "tunesync/index.html",
 ];
 
 for (const file of requiredFiles) {

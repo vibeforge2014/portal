@@ -29,34 +29,6 @@ jobs:
           ref: main
           path: portal
 
-      - name: Check out Tivon
-        uses: actions/checkout@v6
-        with:
-          repository: vibeforge2014/tivon-support
-          ref: main
-          path: tivon
-
-      - name: Check out Tellyra
-        uses: actions/checkout@v6
-        with:
-          repository: vibeforge2014/tellyra-support
-          ref: main
-          path: tellyra
-
-      - name: Check out ServerHub
-        uses: actions/checkout@v6
-        with:
-          repository: vibeforge2014/serverhub-support
-          ref: main
-          path: serverhub
-
-      - name: Check out TailTalk
-        uses: actions/checkout@v6
-        with:
-          repository: vibeforge2014/tailtalk-site
-          ref: main
-          path: tailtalk
-
       - name: Check out ChargePilot
         uses: actions/checkout@v6
         with:
@@ -71,58 +43,15 @@ jobs:
           ref: main
           path: minuteflow
 
-      - name: Check out TuneSync
-        uses: actions/checkout@v6
-        with:
-          repository: vibeforge2014/TuneSync-Site
-          ref: master
-          path: tunesync
-
       - uses: actions/setup-node@v6
         with:
           node-version: 22
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
 
       - name: Build Portal
         working-directory: portal
         run: |
           npm ci
           BASE_PATH="" npm run build
-
-      - name: Build Tivon
-        working-directory: tivon
-        run: |
-          npm ci
-          SITE_BASE_PATH=/tivon npm run build
-
-      - name: Build Tellyra
-        working-directory: tellyra
-        env:
-          CLOUDFLARE_PAGES: "true"
-          SITE_BASE_PATH: /tellyra
-          NEXT_PUBLIC_SITE_URL: https://norelle.cc/tellyra
-        run: |
-          npm ci
-          npm run build:pages
-
-      - name: Build ServerHub
-        working-directory: serverhub
-        env:
-          CLOUDFLARE_PAGES: "true"
-          SITE_BASE_PATH: /serverhub
-          NEXT_PUBLIC_SITE_URL: https://norelle.cc/serverhub
-        run: |
-          npm ci
-          npm run build:pages -- --webpack
-
-      - name: Build TailTalk
-        working-directory: tailtalk
-        run: |
-          npm ci
-          SITE_BASE_PATH=/tailtalk npm run build
 
       - name: Build ChargePilot
         working-directory: chargepilot
@@ -136,25 +65,11 @@ jobs:
           npm ci
           npm run build
 
-      - name: Build TuneSync
-        working-directory: tunesync
-        env:
-          BASE_PATH: /tunesync
-          CLOUDFLARE_PAGES: "true"
-        run: |
-          pnpm install --frozen-lockfile
-          pnpm build
-
       - name: Assemble unified site
         run: |
-          mkdir -p dist/{tivon,tellyra,serverhub,tailtalk,chargepilot,minuteflow,tunesync}
+          mkdir -p dist/{chargepilot,minuteflow}
           cp -R portal/out/. dist/
-          cp -R tivon/out/. dist/tivon/
-          cp -R tellyra/out/. dist/tellyra/
-          cp -R serverhub/out/. dist/serverhub/
-          cp -R tailtalk/dist/client/. dist/tailtalk/
           cp -R chargepilot/dist/. dist/chargepilot/
-          cp -R tunesync/out/. dist/tunesync/
           rsync -a --exclude='.git' --exclude='.github' --exclude='README.md' --exclude='.DS_Store' minuteflow/ dist/minuteflow/
           node portal/scripts/rewrite-unified-paths.mjs dist
 

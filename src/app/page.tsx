@@ -1,64 +1,74 @@
 import { Hero } from "@/components/Hero";
 import { ProductGrid } from "@/components/ProductGrid";
 
-/**
- * Sticky translucent top bar. Built as a glass material so content scrolls
- * underneath instead of consuming a fixed opaque strip (§12). The brand mark
- * links back to the GitHub account.
- */
+function BrandMark({ compact = false }: { compact?: boolean }) {
+  return (
+    <span className={compact ? "brand-mark brand-mark--compact" : "brand-mark"} aria-hidden>
+      <span />
+      <span />
+      <span />
+      <span />
+    </span>
+  );
+}
+
 function TopBar() {
   return (
-    <div className="sticky top-0 z-50 glass">
-      <div className="mx-auto flex max-w-content items-center justify-between px-6 py-3.5">
+    <header className="site-header">
+      <nav className="nav-shell" aria-label="主导航">
+        <a href="#top" className="brand-link" aria-label="VibeForge 首页">
+          <BrandMark compact />
+          <span>VibeForge</span>
+        </a>
+
+        <div className="nav-links">
+          <a href="#products">应用</a>
+          <a href="#principles">理念</a>
+        </div>
+
         <a
           href="https://github.com/vibeforge2014"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-2 no-underline"
+          className="nav-action"
         >
-          <span
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-[13px] font-bold text-white"
-            style={{
-              backgroundImage:
-                "linear-gradient(135deg, #0A84FF, #BF5AF2)",
-            }}
-            aria-hidden
-          >
-            V
-          </span>
-          <span className="text-[15px] font-semibold tracking-tight text-[rgb(var(--fg))]">
-            VibeForge
-          </span>
+          GitHub
+          <svg viewBox="0 0 16 16" aria-hidden><path d="M4 12 12 4M6 4h6v6" /></svg>
         </a>
-        <a
-          href="https://github.com/vibeforge2014"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-sm font-medium text-[rgb(var(--fg-secondary))] no-underline transition-colors hover:text-[rgb(var(--accent))]"
-        >
-          GitHub ↗
-        </a>
+      </nav>
+    </header>
+  );
+}
+
+function Principles() {
+  return (
+    <section id="principles" className="principles-section">
+      <div className="principles-copy">
+        <p className="section-label">我们的坚持</p>
+        <h2>不打扰，才是好工具。</h2>
+        <p>
+          让复杂的能力自然融入日常。数据留在设备上，界面保持清晰，
+          每一次操作都给你即时而恰当的回应。
+        </p>
       </div>
-    </div>
+      <div className="principle-list">
+        <div><span>01</span><strong>原生体验</strong><p>为每个平台认真设计，而不是简单移植。</p></div>
+        <div><span>02</span><strong>隐私优先</strong><p>尽可能在本地完成处理，不追踪你的行为。</p></div>
+        <div><span>03</span><strong>克制设计</strong><p>只留下真正有用的能力，让使用自然发生。</p></div>
+      </div>
+    </section>
   );
 }
 
 function Footer() {
   return (
-    <footer className="px-6 py-12">
-      <div className="mx-auto flex max-w-content flex-col items-center gap-2 text-center">
-        <p className="text-sm text-[rgb(var(--fg-tertiary))]">
-          © {new Date().getFullYear()} VibeForge
-        </p>
-        <a
-          href="https://github.com/vibeforge2014"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-sm text-[rgb(var(--fg-secondary))] no-underline transition-colors hover:text-[rgb(var(--accent))]"
-        >
-          github.com/vibeforge2014
-        </a>
-      </div>
+    <footer className="site-footer">
+      <a href="#top" className="footer-brand">
+        <BrandMark compact />
+        <span>VibeForge</span>
+      </a>
+      <p>独立开发，用心打磨。</p>
+      <span>© {new Date().getFullYear()}</span>
     </footer>
   );
 }
@@ -67,9 +77,10 @@ export default function Page() {
   return (
     <>
       <TopBar />
-      <main>
+      <main id="top">
         <Hero />
         <ProductGrid />
+        <Principles />
       </main>
       <Footer />
     </>

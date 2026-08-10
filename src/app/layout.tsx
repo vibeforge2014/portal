@@ -3,9 +3,9 @@ import { ThemeScript } from "@/components/ThemeScript";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "VibeForge — 产品矩阵",
+  title: "VibeForge — ChargePilot 与 MinuteFlow",
   description:
-    "VibeForge 旗下原生应用与开发工具的统一入口:macOS、iOS 与 Apple TV 上的精致体验。",
+    "VibeForge 的 macOS 原生应用：ChargePilot 现已开放购买，MinuteFlow 暂不销售。",
   icons: {
     icon: [
       {
@@ -14,9 +14,9 @@ export const metadata: Metadata = {
     ],
   },
   openGraph: {
-    title: "VibeForge — 产品矩阵",
+    title: "VibeForge — ChargePilot 与 MinuteFlow",
     description:
-      "VibeForge 旗下原生应用与开发工具的统一入口。",
+      "ChargePilot 现已开放购买，MinuteFlow 暂不销售。",
     type: "website",
   },
 };
