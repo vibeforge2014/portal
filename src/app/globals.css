@@ -85,6 +85,10 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .nav-action { justify-self: end; display: inline-flex; align-items: center; gap: 7px; padding: 9px 13px; border-radius: 11px; background: rgb(var(--fg)); color: rgb(var(--bg)); font-size: 12px; font-weight: 650; transition: transform .12s ease, opacity .2s ease; }
 .nav-action:active { transform: scale(.96); }
 .nav-action svg { width: 14px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.nav-actions { justify-self: end; display: flex; align-items: center; gap: 7px; }
+.language-toggle { min-width: 36px; height: 34px; padding: 0 10px; border: 1px solid rgba(var(--line), .09); border-radius: 10px; color: rgb(var(--secondary)); background: rgba(var(--surface), .66); font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; transition: color .2s ease, background .2s ease, transform .12s ease; }
+.language-toggle:hover { color: rgb(var(--fg)); background: rgb(var(--surface)); }
+.language-toggle:active { transform: scale(.95); }
 
 .hero-section {
   position: relative;

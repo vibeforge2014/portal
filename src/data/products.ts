@@ -3,6 +3,7 @@
 // Only products in the current Paddle-facing commercial scope belong here.
 
 import type { IconKey } from "@/components/AppIcon";
+import type { Language } from "@/components/LanguageProvider";
 
 export type Platform = "macOS" | "iOS" | "Apple TV" | "Web";
 
@@ -42,7 +43,8 @@ const SITE = {
   minuteflow: "/minuteflow/",
 } as const;
 
-export const products: Product[] = [
+const localizedProducts: Record<Language, Product[]> = {
+  zh: [
   {
     id: "chargepilot",
     name: "ChargePilot",
@@ -77,7 +79,50 @@ export const products: Product[] = [
     features: ["音频录制", "语音转文字", "实时纪要与摘要生成"],
     draft: true,
   },
-];
+  ],
+  en: [
+    {
+      id: "chargepilot",
+      name: "ChargePilot",
+      category: "macOS battery management",
+      tagline: "Take control of every charge",
+      description: "A native battery utility for charge limits, temperature protection, and real-time energy monitoring—all processed locally.",
+      url: SITE.chargepilot,
+      platforms: ["macOS"],
+      group: "apps",
+      accent: { from: "#0878FF", to: "#20C8FF" },
+      icon: "battery",
+      iconSrc: "icons/chargepilot-logo-2026.png",
+      features: [
+        "Adjustable charge limits",
+        "Temperature and battery health protection",
+        "Real-time power flow monitoring",
+        "Menu bar controls and automation",
+      ],
+    },
+    {
+      id: "minuteflow",
+      name: "MinuteFlow",
+      category: "Coming soon · Not for sale",
+      tagline: "Record, transcribe, and capture minutes live",
+      description: "Record meetings, transcribe speech in real time, and automatically organize minutes and summaries.",
+      url: SITE.minuteflow,
+      platforms: ["macOS"],
+      group: "apps",
+      accent: { from: "#FF5A42", to: "#FF8A46" },
+      icon: "waveform",
+      iconSrc: "icons/minuteflow.png",
+      features: ["Audio recording", "Speech-to-text", "Live minutes and summaries"],
+      draft: true,
+    },
+  ],
+};
+
+export function getProducts(language: Language): Product[] {
+  return localizedProducts[language];
+}
+
+export const products = localizedProducts.zh;
 
 export const groups: { id: ProductGroup; title: string; subtitle: string }[] = [
   { id: "apps", title: "原生应用", subtitle: "为 macOS 打造" },

@@ -1,20 +1,23 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
-import { products } from "@/data/products";
+import { getProducts } from "@/data/products";
 import { ProductCard } from "./ProductCard";
+import { useLanguage } from "./LanguageProvider";
 
 export function ProductGrid() {
   const reduceMotion = useReducedMotion();
+  const { language, text } = useLanguage();
+  const products = getProducts(language);
 
   return (
     <section id="products" className="products-section" aria-labelledby="products-title">
       <div className="section-heading">
         <div>
-          <p className="section-label">产品矩阵</p>
-          <h2 id="products-title">专注做好两款<br />macOS 工具。</h2>
+          <p className="section-label">{text.productMatrix}</p>
+          <h2 id="products-title">{text.productTitle.split("\n").map((line, index) => <span key={line}>{index > 0 && <br />}{line}</span>)}</h2>
         </div>
-        <p>ChargePilot 现已开放购买。<br />MinuteFlow 正在准备中，暂不开放购买。</p>
+        <p>{text.productIntro.split("\n").map((line, index) => <span key={line}>{index > 0 && <br />}{line}</span>)}</p>
       </div>
 
       <motion.div

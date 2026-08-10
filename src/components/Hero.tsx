@@ -1,13 +1,16 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
-import { products } from "@/data/products";
+import { getProducts } from "@/data/products";
 import { AppIcon } from "./AppIcon";
+import { useLanguage } from "./LanguageProvider";
 
 const spring = { type: "spring" as const, stiffness: 260, damping: 28 };
 
 export function Hero() {
   const reduceMotion = useReducedMotion();
+  const { language, text } = useLanguage();
+  const products = getProducts(language);
 
   return (
     <section className="hero-section" aria-labelledby="hero-title">
@@ -19,28 +22,25 @@ export function Hero() {
         animate={{ opacity: 1, y: 0 }}
         transition={spring}
       >
-        <div className="studio-pill"><span /> 独立软件工作室</div>
+        <div className="studio-pill"><span /> {text.studio}</div>
         <h1 id="hero-title">
-          <span className="headline-plain">好工具，应该让人</span>
-          <span>自然地喜欢上。</span>
+          <span className="headline-plain">{text.headlinePlain}</span>
+          <span>{text.headlineAccent}</span>
         </h1>
-        <p className="hero-description">
-          我们为 macOS 打造专注、可靠的原生应用。
-          复杂留给技术，简单留给你。
-        </p>
+        <p className="hero-description">{text.heroDescription}</p>
         <div className="hero-actions">
           <a href="#products" className="primary-button">
-            浏览全部应用
+            {text.browseApps}
             <svg viewBox="0 0 18 18" aria-hidden><path d="m5 7 4 4 4-4" /></svg>
           </a>
           <a href="https://github.com/vibeforge2014" target="_blank" rel="noopener noreferrer" className="quiet-button">
-            了解 VibeForge <span>↗</span>
+            {text.about} <span>↗</span>
           </a>
         </div>
-        <div className="hero-meta" aria-label="产品概览">
-          <div><strong>1</strong><span>款在售产品</span></div>
-          <div><strong>{products.length}</strong><span>款 macOS 应用</span></div>
-          <div><strong>0</strong><span>行为追踪</span></div>
+        <div className="hero-meta" aria-label={text.overviewLabel}>
+          <div><strong>1</strong><span>{text.onSale}</span></div>
+          <div><strong>{products.length}</strong><span>{text.macApps}</span></div>
+          <div><strong>0</strong><span>{text.tracking}</span></div>
         </div>
       </motion.div>
 
@@ -61,7 +61,7 @@ export function Hero() {
           </div>
           <div className="panel-copy">
             <span>YOUR EVERYDAY TOOLKIT</span>
-            <h2>一套为日常而生的<br />原生工具。</h2>
+            <h2>{text.toolkit.split("\n").map((line, index) => <span key={line}>{index > 0 && <br />}{line}</span>)}</h2>
           </div>
           <div className="icon-stage">
             {products.slice(0, 6).map((product, index) => (
