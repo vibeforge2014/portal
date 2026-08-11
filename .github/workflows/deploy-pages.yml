@@ -43,6 +43,13 @@ jobs:
           ref: main
           path: minuteflow
 
+      - name: Check out TailTalk
+        uses: actions/checkout@v6
+        with:
+          repository: vibeforge2014/tailtalk-site
+          ref: main
+          path: tailtalk
+
       - uses: actions/setup-node@v6
         with:
           node-version: 22
@@ -65,11 +72,20 @@ jobs:
           npm ci
           npm run build
 
+      - name: Build TailTalk
+        working-directory: tailtalk
+        env:
+          SITE_BASE_PATH: /tailtalk
+        run: |
+          npm ci
+          npm run build
+
       - name: Assemble unified site
         run: |
-          mkdir -p dist/{chargepilot,minuteflow}
+          mkdir -p dist/{chargepilot,minuteflow,tailtalk}
           cp -R portal/out/. dist/
           cp -R chargepilot/dist/. dist/chargepilot/
+          cp -R tailtalk/dist/client/. dist/tailtalk/
           rsync -a --exclude='.git' --exclude='.github' --exclude='README.md' --exclude='.DS_Store' minuteflow/ dist/minuteflow/
           node portal/scripts/rewrite-unified-paths.mjs dist
 

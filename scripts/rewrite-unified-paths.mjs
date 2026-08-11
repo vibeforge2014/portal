@@ -33,6 +33,7 @@ const requiredFiles = [
   "index.html",
   "chargepilot/index.html",
   "minuteflow/index.html",
+  "tailtalk/index.html",
 ];
 
 for (const file of requiredFiles) {
