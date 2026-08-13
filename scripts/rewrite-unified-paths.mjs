@@ -31,9 +31,13 @@ await visit(path.join(root, "minuteflow"), (text, file) => {
 
 const requiredFiles = [
   "index.html",
+  "tivon/index.html",
+  "tellyra/index.html",
+  "serverhub/index.html",
+  "tailtalk/index.html",
   "chargepilot/index.html",
   "minuteflow/index.html",
-  "tailtalk/index.html",
+  "tunesync/index.html",
 ];
 
 for (const file of requiredFiles) {
