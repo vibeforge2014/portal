@@ -40,22 +40,36 @@ for (const file of requiredFiles) {
   await fs.access(path.join(root, file));
 }
 
-const missing = new Set();
+// Distinguish two kinds of broken links:
+//  - missingAssets: real broken references (CSS/JS/images, nested paths) → fatal.
+//  - missingRoots: storefront product subsite roots (e.g. /serverhub/) whose
+//    subsite simply isn't part of this assembled deploy. These are optional —
+//    app visibility is controlled at runtime by the portal, and an enabled app
+//    may legitimately not have a deployed subsite yet — so they only warn.
+const isSubsiteRoot = (raw) => /^\/[^/]+\/?$/.test(raw);
+const missingAssets = new Set();
+const missingRoots = new Set();
 await visit(root, async (text) => {
   for (const match of text.matchAll(/(?:href|src)=["'](\/[^"'#?]*)/g)) {
-    const target = path.join(root, decodeURIComponent(match[1]));
+    const raw = decodeURIComponent(match[1]);
+    const target = path.join(root, raw);
     try {
       const stat = await fs.stat(target);
       if (stat.isDirectory()) await fs.access(path.join(target, "index.html"));
     } catch {
-      missing.add(match[1]);
+      (isSubsiteRoot(raw) ? missingRoots : missingAssets).add(match[1]);
     }
   }
   return text;
 });
 
-if (missing.size > 0) {
-  throw new Error(`Missing local targets:\n${[...missing].sort().join("\n")}`);
+if (missingAssets.size > 0) {
+  throw new Error(`Missing local assets:\n${[...missingAssets].sort().join("\n")}`);
+}
+if (missingRoots.size > 0) {
+  console.warn(
+    `Warning: subsite roots not present in this build (non-blocking):\n  ${[...missingRoots].sort().join("\n  ")}`,
+  );
 }
 
 console.log(`Unified site is ready in ${root}`);

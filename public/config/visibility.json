@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "visibility": {
+    "chargepilot": true,
+    "minuteflow": true,
+    "serverhub": false,
+    "tellyra": false,
+    "tivon": false,
+    "tunesync": false,
+    "tailtalk": false
+  }
+}

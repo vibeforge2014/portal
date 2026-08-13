@@ -1,14 +1,15 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
-import { getProducts } from "@/data/products";
 import { ProductCard } from "./ProductCard";
 import { useLanguage } from "./LanguageProvider";
+import { useProducts } from "./ProductsProvider";
 
 export function ProductGrid() {
   const reduceMotion = useReducedMotion();
   const { language, text } = useLanguage();
-  const products = getProducts(language);
+  const { products } = useProducts();
+  const emptyText = language === "zh" ? "暂无可展示的应用。" : "No apps to show right now.";
 
   return (
     <section id="products" className="products-section" aria-labelledby="products-title">
@@ -20,6 +21,14 @@ export function ProductGrid() {
         <p>{text.productIntro.split("\n").map((line, index) => <span key={line}>{index > 0 && <br />}{line}</span>)}</p>
       </div>
 
+      {products.length === 0 ? (
+        <p
+          className="product-bento"
+          style={{ justifyContent: "center", padding: "3rem 1rem", opacity: 0.6, fontSize: "0.95rem" }}
+        >
+          {emptyText}
+        </p>
+      ) : (
       <motion.div
         className="product-bento"
         initial="hidden"
@@ -43,6 +52,7 @@ export function ProductGrid() {
           </motion.div>
         ))}
       </motion.div>
+      )}
     </section>
   );
 }

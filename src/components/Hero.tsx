@@ -1,16 +1,18 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
-import { getProducts } from "@/data/products";
 import { AppIcon } from "./AppIcon";
 import { useLanguage } from "./LanguageProvider";
+import { useProducts } from "./ProductsProvider";
 
 const spring = { type: "spring" as const, stiffness: 260, damping: 28 };
 
 export function Hero() {
   const reduceMotion = useReducedMotion();
-  const { language, text } = useLanguage();
-  const products = getProducts(language);
+  const { text } = useLanguage();
+  const { products } = useProducts();
+  // "On sale" = visible products that aren't drafts/coming-soon.
+  const onSaleCount = products.filter((product) => !product.draft).length;
 
   return (
     <section className="hero-section" aria-labelledby="hero-title">
@@ -38,7 +40,7 @@ export function Hero() {
           </a>
         </div>
         <div className="hero-meta" aria-label={text.overviewLabel}>
-          <div><strong>1</strong><span>{text.onSale}</span></div>
+          <div><strong>{onSaleCount}</strong><span>{text.onSale}</span></div>
           <div><strong>{products.length}</strong><span>{text.macApps}</span></div>
           <div><strong>0</strong><span>{text.tracking}</span></div>
         </div>

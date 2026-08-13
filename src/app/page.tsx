@@ -2,6 +2,7 @@
 
 import { Hero } from "@/components/Hero";
 import { ProductGrid } from "@/components/ProductGrid";
+import { ProductsProvider } from "@/components/ProductsProvider";
 import { LanguageProvider, useLanguage } from "@/components/LanguageProvider";
 
 function BrandMark({ compact = false }: { compact?: boolean }) {
@@ -89,13 +90,15 @@ function Footer() {
 export default function Page() {
   return (
     <LanguageProvider>
-      <TopBar />
-      <main id="top">
-        <Hero />
-        <ProductGrid />
-        <Principles />
-      </main>
-      <Footer />
+      <ProductsProvider>
+        <TopBar />
+        <main id="top">
+          <Hero />
+          <ProductGrid />
+          <Principles />
+        </main>
+        <Footer />
+      </ProductsProvider>
     </LanguageProvider>
   );
 }

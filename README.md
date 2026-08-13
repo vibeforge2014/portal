@@ -9,7 +9,18 @@
 | ChargePilot | macOS 电池管理 | https://vibeforge2014.github.io/chargepilot-site/ |
 | MinuteFlow | 录音·转录·纪要 | https://vibeforge2014.github.io/meeting-assistant-site/ |
 
-产品数据集中在 `src/data/products.ts`,新增或更新站点时只改这一个文件。
+产品数据集中在 `src/data/products.ts`,新增或更新站点时只改这一个文件。「是否在门户展示」由 `public/config/visibility.json` 控制,可在后台页面配置(见下)。
+
+## 应用展示后台（`/admin/`）
+
+门户自带一个纯前端后台,用于勾选哪些应用出现在前台,无需改代码:
+
+1. 访问 `https://<你的站点>/admin/`(本地为 `http://localhost:3000/admin/`)。
+2. 在「应用可见性」里切换每个应用的开关。
+3. 在「GitHub 配置」里填写一个 **fine-grained Personal Access Token**(仅本仓库 Contents 读写权限,建议短期有效),其余字段默认指向 `vibeforge2014/portal` 的 `public/config/visibility.json`。
+4. 点击「保存到仓库」——后台通过 GitHub Contents API 改写该 JSON 并提交。Cloudflare Pages 会在约 1–2 分钟内自动重建后生效;GitHub Pages 在下次部署后生效。
+
+> Token 仅保存在当前浏览器的 `localStorage`,只发往 `api.github.com`。前台运行时拉取 `visibility.json` 决定展示;拉取失败则回退到 `products.ts` 中每个应用的默认 `visible` 值。
 
 ## 本地开发
 
