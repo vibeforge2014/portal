@@ -6,6 +6,7 @@
 # next.js build output
 /.next/
 /out/
+/.data/
 
 # production
 /build

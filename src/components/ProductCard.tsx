@@ -1,11 +1,19 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
+import { useRef } from "react";
 import type { Product } from "@/data/products";
 import { AppIcon } from "./AppIcon";
 
 export function ProductCard({ product, featured = false }: { product: Product; featured?: boolean }) {
   const reduceMotion = useReducedMotion();
+  const glowRef = useRef<HTMLDivElement>(null);
+
+  function moveGlow(event: React.PointerEvent<HTMLAnchorElement>) {
+    if (reduceMotion || event.pointerType === "touch" || !glowRef.current) return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    glowRef.current.style.transform = `translate3d(${event.clientX - bounds.left - 150}px, ${event.clientY - bounds.top - 150}px, 0)`;
+  }
 
   return (
     <motion.a
@@ -16,8 +24,9 @@ export function ProductCard({ product, featured = false }: { product: Product; f
       whileTap={{ scale: 0.985 }}
       transition={{ type: "spring", stiffness: 340, damping: 30 }}
       style={{ "--product-from": product.accent.from, "--product-to": product.accent.to } as React.CSSProperties}
+      onPointerMove={moveGlow}
     >
-      <div className="card-glow" aria-hidden />
+      <div ref={glowRef} className="card-glow" aria-hidden />
       <div className="card-topline">
         <AppIcon icon={product.icon} gradient={product.accent} iconSrc={product.iconSrc} size={featured ? 72 : 58} />
         <span className="card-arrow" aria-hidden>

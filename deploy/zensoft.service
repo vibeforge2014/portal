@@ -1,0 +1,26 @@
+[Unit]
+Description=ZenSoft Next.js application
+After=network.target
+
+[Service]
+Type=simple
+User=zensoft
+Group=zensoft
+WorkingDirectory=/opt/zensoft/current
+Environment=NODE_ENV=production
+Environment=HOSTNAME=127.0.0.1
+Environment=PORT=3000
+Environment=ZENSOFT_DATA_DIR=/var/lib/zensoft/data
+Environment=ZENSOFT_UPLOAD_DIR=/var/lib/zensoft/uploads
+EnvironmentFile=-/etc/zensoft/zensoft.env
+ExecStart=/usr/bin/node /opt/zensoft/current/server.js
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/zensoft
+
+[Install]
+WantedBy=multi-user.target

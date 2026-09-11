@@ -3,13 +3,10 @@
 import { motion, useReducedMotion } from "motion/react";
 import { ProductCard } from "./ProductCard";
 import { useLanguage } from "./LanguageProvider";
-import { useProducts } from "./ProductsProvider";
 
 export function ProductGrid() {
   const reduceMotion = useReducedMotion();
-  const { language, text } = useLanguage();
-  const { products } = useProducts();
-  const emptyText = language === "zh" ? "暂无可展示的应用。" : "No apps to show right now.";
+  const { text, products } = useLanguage();
 
   return (
     <section id="products" className="products-section" aria-labelledby="products-title">
@@ -21,14 +18,6 @@ export function ProductGrid() {
         <p>{text.productIntro.split("\n").map((line, index) => <span key={line}>{index > 0 && <br />}{line}</span>)}</p>
       </div>
 
-      {products.length === 0 ? (
-        <p
-          className="product-bento"
-          style={{ justifyContent: "center", padding: "3rem 1rem", opacity: 0.6, fontSize: "0.95rem" }}
-        >
-          {emptyText}
-        </p>
-      ) : (
       <motion.div
         className="product-bento"
         initial="hidden"
@@ -42,7 +31,7 @@ export function ProductGrid() {
         {products.map((product, index) => (
           <motion.div
             key={product.id}
-            className={index === 0 ? "product-slot product-slot--featured" : "product-slot"}
+            className={`product-slot${index === 0 ? " product-slot--featured" : ""}${products.length % 3 === 1 && index === products.length - 1 ? " product-slot--wide" : ""}`}
             variants={reduceMotion ? { hidden: { opacity: 0 }, visible: { opacity: 1 } } : {
               hidden: { opacity: 0, y: 20 },
               visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 260, damping: 28 } },
@@ -52,7 +41,6 @@ export function ProductGrid() {
           </motion.div>
         ))}
       </motion.div>
-      )}
     </section>
   );
 }

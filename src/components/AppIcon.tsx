@@ -106,6 +106,7 @@ export function AppIcon({
   // resolve the public asset path manually against the configured basePath.
   if (iconSrc) {
     const base = process.env.NEXT_PUBLIC_BASEPATH ?? "";
+    const source = `${base}${iconSrc.startsWith("/") ? iconSrc : `/${iconSrc}`}`;
     return (
       <span
         className="relative inline-flex shrink-0 items-center justify-center overflow-hidden"
@@ -119,7 +120,7 @@ export function AppIcon({
         aria-hidden
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={`${base}/${iconSrc}`} alt="" width={size} height={size} className="block" />
+        <img src={source} alt="" width={size} height={size} className="block" />
       </span>
     );
   }

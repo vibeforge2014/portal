@@ -1,66 +1,46 @@
-# VibeForge Portal
+# ZenSoft Portal
 
-[vibeforge2014](https://github.com/vibeforge2014) 的 macOS 产品入口。ChargePilot 是当前唯一在售产品，MinuteFlow 暂不开放购买。基于 Next.js(App Router)+ TypeScript + Tailwind CSS + Motion。
+绍兴市臻书科技有限公司旗下 ZenSoft 品牌官网与内容管理后台。项目基于 Next.js 16、React 19、SQLite、Zod、Argon2id 和 Motion。
 
-## 收录的站点
+## 功能
 
-| 产品 | 类别 | 链接 |
-|------|------|------|
-| ChargePilot | macOS 电池管理 | https://vibeforge2014.github.io/chargepilot-site/ |
-| MinuteFlow | 录音·转录·纪要 | https://vibeforge2014.github.io/meeting-assistant-site/ |
-
-产品数据集中在 `src/data/products.ts`,新增或更新站点时只改这一个文件。「是否在门户展示」由 `public/config/visibility.json` 控制,可在后台页面配置(见下)。
-
-## 应用展示后台（`/admin/`）
-
-门户自带一个纯前端后台,用于勾选哪些应用出现在前台,无需改代码:
-
-1. 访问 `https://<你的站点>/admin/`(本地为 `http://localhost:3000/admin/`)。
-2. 在「应用可见性」里切换每个应用的开关。
-3. 在「GitHub 配置」里填写一个 **fine-grained Personal Access Token**(仅本仓库 Contents 读写权限,建议短期有效),其余字段默认指向 `vibeforge2014/portal` 的 `public/config/visibility.json`。
-4. 点击「保存到仓库」——后台通过 GitHub Contents API 改写该 JSON 并提交。Cloudflare Pages 会在约 1–2 分钟内自动重建后生效;GitHub Pages 在下次部署后生效。
-
-> Token 仅保存在当前浏览器的 `localStorage`,只发往 `api.github.com`。前台运行时拉取 `visibility.json` 决定展示;拉取失败则回退到 `products.ts` 中每个应用的默认 `visible` 值。
+- 双语官网，收录 ChargePilot、MinuteFlow、ServerHub、Tellyra、Tivon、TuneSync、TailTalk、Lattice 八款应用。
+- `/admin` 单管理员后台：品牌 Logo、页面文案、产品、媒体、SEO、发布与上一版回滚。
+- 草稿与线上快照分离；发布前的线上版本作为唯一上一版保留。
+- PNG/WebP 上传校验、重新编码和 256px 缩略图。
+- Argon2id 密码、哈希会话令牌、Strict Cookie、CSRF、登录限速和首次改密。
 
 ## 本地开发
 
 ```bash
 npm install
-npm run dev      # http://localhost:3000
+ZENSOFT_BOOTSTRAP_PASSWORD='请使用至少12位的临时密码' npm run dev
 ```
 
-> 注意:本地 dev 时 `basePath` 仍会生效(默认 `/portal`)。若本地预览想用根路径,把 `next.config.mjs` 中的 `repo` 改为 `""` 即可。
+默认地址为 `http://localhost:3000`。数据库与上传文件位于 `.data/`。第一次登录时创建 `admin`，并要求立即修改密码。
 
-## 部署到 GitHub Pages
+可用环境变量：
 
-本门户本身也部署为 GitHub Pages(static export)。
+- `ZENSOFT_DATA_DIR`：持久数据目录。
+- `ZENSOFT_UPLOAD_DIR`：上传目录。
+- `ZENSOFT_DB_PATH`：SQLite 文件路径。
+- `ZENSOFT_ADMIN_USERNAME`：首次初始化用户名，默认 `admin`。
+- `ZENSOFT_BOOTSTRAP_PASSWORD`：首次初始化临时密码。
+- `ZENSOFT_SECURE_COOKIES=false`：仅限本地 HTTP 调试；生产环境不要关闭。
 
-1. 在 GitHub 新建仓库,例如 `portal`(或 `vibeforge2014.github.io`)。
-2. 打开 `next.config.mjs`,把 `const repo = "portal"` 改成你的仓库名;若部署到 `vibeforge2014.github.io` 则改为 `""`。
-3. 推送代码后,在仓库 **Settings → Pages** 中选择部署方式(推荐用 GitHub Actions 或 `gh-pages` 分支)。
-4. 用 `gh-pages` 一键发布:
+## 验证
 
-   ```bash
-   npm run deploy   # 先 build,再把 out/ 推到 gh-pages 分支
-   ```
+```bash
+npm run typecheck
+npm test
+npm audit --audit-level=high
+npm run build
+```
 
-构建产物在 `out/` 目录(static export,无需 Node 运行时)。
+GitHub Actions 只执行构建、测试和安全审计；生产内容不再发布到 Cloudflare Pages。
 
-## 设计要点
+## 生产部署
 
-- **流体交互**:卡片悬停抬升、按下即时回弹,弹簧为临界阻尼(无 overshoot),路径对称。
-- **材质深度**:顶栏为半透明玻璃(`backdrop-filter`),内容在其下滚动。
-- **排版**:系统字体栈;大标题负字距 + 紧行高,正文宽松行高。
-- **可访问性**:
-  - `prefers-reduced-motion` → 动画降级为交叉淡入,无弹簧/视差。
-  - `prefers-reduced-transparency` → 玻璃面变为实色。
-  - `prefers-contrast: more` → 近实色背景 + 高对比边框。
-  - 明暗主题自动跟随系统。
-  - 卡片为真实 `<a>`,可键盘 Tab 聚焦并回车打开。
+生产服务器使用 Node.js 22、Next.js standalone、非 root `zensoft` 用户、systemd 和 Nginx。应用仅监听 `127.0.0.1:3000`，持久数据位于 `/var/lib/zensoft`，版本位于 `/opt/zensoft/releases`。
 
-## 技术栈
-
-- Next.js 14(App Router,`output: export`)
-- TypeScript
-- Tailwind CSS 3
-- Motion(弹簧动画)
+当前 IP 阶段由 Nginx 提供自签名 HTTPS，并将 `/admin` 从 HTTP 跳转到 HTTPS。`zensoft.top` DNS 生效后，应更换为受信任证书并开启全站 HTTPS。
