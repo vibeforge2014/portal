@@ -7,6 +7,9 @@ import { useLanguage } from "./LanguageProvider";
 const spring = { type: "spring" as const, stiffness: 260, damping: 28 };
 const tiltSpring = { stiffness: 130, damping: 22, mass: 0.7 };
 
+// Hero 面板精选组合：兼顾配色层次，随产品可见性自动收敛。
+const HERO_APP_IDS = ["chargepilot", "tunesync", "tellyra", "tivon", "lattice", "visto"];
+
 function HeroAppIcon({ product, size }: { product: ReturnType<typeof useLanguage>["products"][number]; size: number }) {
   const inset = size >= 50 ? 4 : 3;
   return (
@@ -19,6 +22,7 @@ function HeroAppIcon({ product, size }: { product: ReturnType<typeof useLanguage
 export function Hero() {
   const reduceMotion = useReducedMotion();
   const { text, products, content } = useLanguage();
+  const heroApps = HERO_APP_IDS.map((id) => products.find((product) => product.id === id)).filter((product) => product !== undefined);
   const pointerX = useMotionValue(0);
   const pointerY = useMotionValue(0);
   const rotateX = useSpring(pointerY, tiltSpring);
@@ -86,7 +90,7 @@ export function Hero() {
             <h2>{text.toolkit.split("\n").map((line, index) => <span key={line}>{index > 0 && <br />}{line}</span>)}</h2>
           </div>
           <div className="icon-stage">
-            {products.slice(0, 6).map((product, index) => (
+            {heroApps.map((product, index) => (
               <motion.a
                 key={product.id}
                 href={product.url}
@@ -104,7 +108,7 @@ export function Hero() {
             ))}
           </div>
           <div className="panel-dock">
-            {products.slice(0, 5).map((product) => (
+            {heroApps.map((product) => (
               <a key={product.id} href={product.url} aria-label={product.name}>
                 <HeroAppIcon product={product} size={42} />
               </a>

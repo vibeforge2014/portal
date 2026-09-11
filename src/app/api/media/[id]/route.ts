@@ -17,7 +17,8 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
   const presetPath = asset.url ? path.resolve(process.cwd(), "public", asset.url.replace(/^\/+/, "")) : null;
   const publicRoot = path.resolve(process.cwd(), "public") + path.sep;
   const filePath = presetPath && presetPath.startsWith(publicRoot) ? presetPath : asset.filePath;
-  const mime = asset.mime || (asset.url?.endsWith(".webp") ? "image/webp" : "image/png");
+  const mime = asset.mime
+    || (asset.url?.endsWith(".svg") ? "image/svg+xml" : asset.url?.endsWith(".webp") ? "image/webp" : "image/png");
   if (!filePath || !mime) return new NextResponse("Not found", { status: 404 });
   try {
     const body = await fs.readFile(filePath);

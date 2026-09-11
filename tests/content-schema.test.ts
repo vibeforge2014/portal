@@ -3,11 +3,12 @@ import test from "node:test";
 import { DEFAULT_CONTENT } from "../src/data/default-content";
 import { parseSiteContent } from "../src/lib/content-schema";
 
-test("seed content validates and includes all eight products", () => {
+test("seed content validates and includes all nine products", () => {
   const content = parseSiteContent(DEFAULT_CONTENT);
   assert.equal(content.schemaVersion, 2);
-  assert.equal(content.products.length, 8);
+  assert.equal(content.products.length, 9);
   assert.ok(content.products.some((product) => product.id === "lattice" && new URL(product.url).hostname === "lattice-dks.pages.dev"));
+  assert.ok(content.products.some((product) => product.id === "visto" && new URL(product.url).hostname === "vibeforge2014.github.io"));
   assert.ok(content.copy.zh.headlinePlain);
   assert.ok(content.copy.en.headlinePlain);
 });

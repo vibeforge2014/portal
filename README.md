@@ -4,7 +4,7 @@
 
 ## 功能
 
-- 双语官网，收录 ChargePilot、MinuteFlow、ServerHub、Tellyra、Tivon、TuneSync、TailTalk、Lattice 八款应用。
+- 双语官网，收录 ChargePilot、MinuteFlow、ServerHub、Tellyra、Tivon、TuneSync、TailTalk、Lattice、Visto 九款应用。
 - `/admin` 单管理员后台：品牌 Logo、页面文案、产品、媒体、SEO、发布与上一版回滚。
 - 草稿与线上快照分离；发布前的线上版本作为唯一上一版保留。
 - PNG/WebP 上传校验、重新编码和 256px 缩略图。

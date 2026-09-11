@@ -26,7 +26,8 @@ export const PRESET_ASSETS: PresetAsset[] = [
   { id: "icon-tivon", name: "Tivon", kind: "product-icon", url: "/icons/tivon-2026.png" },
   { id: "icon-tunesync", name: "TuneSync", kind: "product-icon", url: "/icons/tunesync.png" },
   { id: "icon-tailtalk", name: "TailTalk", kind: "product-icon", url: "/icons/tailtalk-2026.png" },
-  { id: "icon-lattice", name: "Lattice", kind: "product-icon", url: "/icons/lattice.svg" },
+  { id: "icon-lattice-2026", name: "Lattice", kind: "product-icon", url: "/icons/lattice-2026.png" },
+  { id: "icon-visto", name: "Visto", kind: "product-icon", url: "/icons/visto.png" },
 ];
 
 export const DEFAULT_CONTENT: SiteContent = {
@@ -99,8 +100,12 @@ export const DEFAULT_CONTENT: SiteContent = {
       copy: { zh: { name: "TailTalk", category: "iOS 宠物情绪参考", tagline: "宠物声音与行为信息辅助识别", description: "基于宠物声音与行为提供情绪倾向参考及互动建议，结果仅供日常观察使用。", features: ["宠物声音与行为分析", "个性化学习", "设备端隐私保护", "行为趋势记录"] }, en: { name: "TailTalk", category: "iOS pet behavior insights", tagline: "Assisted interpretation of pet sounds and behavior", description: "Provides emotional tendency references and interaction suggestions based on pet sounds and behavior. Results are intended for everyday observation only.", features: ["Sound and behavior analysis", "Personalized learning", "On-device privacy", "Behavior trends"] } },
     },
     {
-      id: "lattice", visible: true, draft: false, order: 7, url: "https://lattice-dks.pages.dev/", platforms: ["macOS"], accentFrom: "#A89BFF", accentTo: "#56D4DD", glyph: "code", iconAssetId: "icon-lattice",
+      id: "lattice", visible: true, draft: false, order: 7, url: "https://lattice-dks.pages.dev/", platforms: ["macOS"], accentFrom: "#A89BFF", accentTo: "#56D4DD", glyph: "code", iconAssetId: "icon-lattice-2026",
       copy: { zh: { name: "Lattice", category: "macOS AI 命令中心", tagline: "一个快捷键，直达整个 Mac", description: "原生 macOS 命令中心，可启动应用、毫秒级搜索全盘文件、运行快捷指令并调用 AI 工具。", features: ["全盘文件快速搜索", "应用与系统命令", "快捷指令集成", "AI 本地工具调用"] }, en: { name: "Lattice", category: "AI command center for macOS", tagline: "One shortcut to your entire Mac", description: "A native macOS command center for launching apps, searching files in milliseconds, running Shortcuts, and calling AI tools.", features: ["Fast full-disk search", "App and system commands", "Shortcuts integration", "AI tool execution"] } },
+    },
+    {
+      id: "visto", visible: true, draft: true, order: 8, url: "https://vibeforge2014.github.io/Visto-Site/", platforms: ["iOS", "macOS"], accentFrom: "#2BD4D4", accentTo: "#1CA3EF", glyph: "sync", iconAssetId: "icon-visto",
+      copy: { zh: { name: "Visto · 拓屏", category: "iOS · macOS 副屏拓展", tagline: "把 iPhone / iPad 变成 Mac 的第二块屏幕", description: "通过 QUIC/TLS 1.3 无线或 USB 直连，将 Mac 画面以低延迟镜像到 iPhone 或 iPad，触控可直接回传为 Mac 输入；画面与输入只在设备间传输，不经云端。", features: ["QUIC 无线与 USB 直连", "硬件编解码低延迟", "触控回传 Mac 输入", "本地传输隐私优先"] }, en: { name: "Visto", category: "iOS · macOS second display", tagline: "Turn your iPhone or iPad into a second Mac screen", description: "Mirrors your Mac to an iPhone or iPad over QUIC/TLS 1.3 wireless or a USB cable, with hardware codecs, touch input sent straight back to the Mac, and a local-first design — video and input never leave your devices.", features: ["QUIC wireless and USB link", "Low-latency hardware codecs", "Touch input back to the Mac", "Local-first privacy"] } },
     },
   ],
   seo: {
