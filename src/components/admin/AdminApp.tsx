@@ -6,9 +6,9 @@ import { BrandMark } from "@/components/SiteShell";
 
 type Asset = { id: string; name: string; kind: "logo" | "product-icon"; preset: boolean; builtin: boolean; width: number | null; height: number | null };
 type Session = { username: string; mustChangePassword: boolean };
-type Tab = "overview" | "brand" | "content" | "products" | "media" | "seo" | "publish" | "security";
+type Tab = "overview" | "orders" | "brand" | "content" | "products" | "media" | "seo" | "publish" | "security";
 
-const tabs: Array<[Tab, string]> = [["overview", "概览"], ["brand", "品牌 Logo"], ["content", "页面内容"], ["products", "产品"], ["media", "媒体库"], ["seo", "SEO"], ["publish", "发布"], ["security", "安全"]];
+const tabs: Array<[Tab, string]> = [["overview", "概览"], ["orders", "订单"], ["brand", "品牌 Logo"], ["content", "页面内容"], ["products", "产品"], ["media", "媒体库"], ["seo", "SEO"], ["publish", "发布"], ["security", "安全"]];
 const copyLabels: Record<string, string> = {
   navLabel: "导航辅助名称", homeLabel: "首页辅助名称", apps: "应用导航", principles: "理念导航", language: "语言按钮", languageLabel: "语言按钮辅助名称",
   studio: "工作室标签", headlinePlain: "主标题上半句", headlineAccent: "主标题强调句", heroDescription: "Hero 描述", browseApps: "浏览应用按钮", about: "了解品牌按钮",
@@ -68,9 +68,10 @@ export function AdminApp() {
   const logoAssets = assets.filter((asset) => asset.kind === "logo"); const iconAssets = assets.filter((asset) => asset.kind === "product-icon");
   return <div className="admin-shell">
     <aside className="admin-sidebar"><div className="admin-brand"><BrandMark compact /><div><strong>ZenSoft</strong><span>Content Studio</span></div></div><nav>{tabs.filter(([id]) => !session.mustChangePassword || id === "security").map(([id, label]) => <button key={id} className={tab === id ? "active" : ""} onClick={() => setTab(id)}>{label}{id === "publish" && dirty && <i />}</button>)}</nav><div className="admin-user"><span>{session.username}</span><button onClick={logout}>退出</button></div></aside>
-    <main className="admin-main"><header className="admin-topbar"><div><p className="eyebrow">ZENSoft CMS</p><h1>{tabs.find(([id]) => id === tab)?.[1]}</h1></div>{!session.mustChangePassword && <div className="admin-actions">{dirty && <span className="dirty-badge">有未发布更改</span>}<button onClick={saveDraft} disabled={busy}>保存草稿</button><button className="admin-primary" onClick={publish} disabled={busy}>发布网站</button></div>}</header>
+    <main className="admin-main"><header className="admin-topbar"><div><p className="eyebrow">ZENSoft CMS</p><h1>{tabs.find(([id]) => id === tab)?.[1]}</h1></div>{!session.mustChangePassword && tab !== "orders" && <div className="admin-actions">{dirty && <span className="dirty-badge">有未发布更改</span>}<button onClick={saveDraft} disabled={busy}>保存草稿</button><button className="admin-primary" onClick={publish} disabled={busy}>发布网站</button></div>}</header>
       {notice && <div className="admin-notice">{notice}</div>}{error && <div className="admin-error banner">{error}</div>}
       {tab === "overview" && <Overview content={content} status={status} assets={assets} dirty={dirty} />}
+      {tab === "orders" && <OrdersPanel csrf={csrf} fail={fail} flash={flash} />}
       {tab === "brand" && <BrandEditor content={content} setContent={setContent} logos={logoAssets} />}
       {tab === "content" && <ContentEditor content={content} setContent={setContent} />}
       {tab === "products" && <ProductsEditor content={content} setContent={setContent} iconAssets={iconAssets} />}
@@ -125,4 +126,162 @@ function SecurityPanel({ csrf, mustChange }: { csrf: string; mustChange: boolean
   const [currentPassword, setCurrent] = useState(""); const [newPassword, setNext] = useState(""); const [message, setMessage] = useState("");
   async function submit(event: React.FormEvent) { event.preventDefault(); try { await requestJson("/api/admin/session", { method: "PATCH", headers: { "content-type": "application/json", "x-csrf-token": csrf }, body: JSON.stringify({ currentPassword, newPassword }) }); setMessage("密码已修改，请重新登录。"); setTimeout(() => location.reload(), 1200); } catch (reason) { setMessage(reason instanceof Error ? reason.message : "修改失败"); } }
   return <article className="admin-card security-card">{mustChange && <div className="admin-warning">首次登录必须修改初始密码。</div>}<h2>修改管理员密码</h2><form onSubmit={submit}><label className="field">当前密码<input type="password" autoComplete="current-password" value={currentPassword} onChange={(e) => setCurrent(e.target.value)} /></label><label className="field">新密码<input type="password" autoComplete="new-password" minLength={12} value={newPassword} onChange={(e) => setNext(e.target.value)} /></label><p className="hint">至少 12 个字符。修改后所有会话都会退出。</p>{message && <p>{message}</p>}<button className="admin-primary">修改密码</button></form></article>;
+}
+
+type OrderLicense = { id: string; licenseKey: string; status: string; validUntil: string | null; emailSentAt: string | null; devicesUsed: number };
+type OrderRow = { id: string; channel: string; outTradeNo: string; email: string; plan: string; amountFen: number; status: string; createdAt: string; paidAt: string | null; license: OrderLicense | null };
+type StatsRow = { channel: string; status: string; plan: string; order_count: number; paid_amount_fen: number | null };
+type DeviceRow = { id: string; device_id: string; device_name: string | null; app_version: string | null; activated_at: string; last_seen_at: string | null; revoked_at: string | null };
+type LicenseFull = { id: string; license_key: string; plan: string; status: string; valid_until: string | null; email_sent_at: string | null };
+type OrderDetail = { order: OrderRow; license: LicenseFull | null; devices: DeviceRow[] };
+
+const orderChannels: Record<string, string> = { alipay: "支付宝", wechat: "微信" };
+const orderPlans: Record<string, string> = { annual: "年度", lifetime: "永久" };
+const orderStatuses: Record<string, string> = { paid: "已支付", created: "待支付", closed: "已关闭", refunded: "已退款" };
+
+function formatYuan(fen: number) { const yuan = (fen ?? 0) / 100; return `¥${Number.isInteger(yuan) ? yuan : yuan.toFixed(2)}`; }
+function formatTime(iso: string | null) { return iso ? new Intl.DateTimeFormat("zh-CN", { timeZone: "Asia/Shanghai", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(iso)) : "—"; }
+
+function OrdersPanel({ csrf, fail, flash }: { csrf: string; fail: (error: unknown) => void; flash: (message: string) => void }) {
+  const [stats, setStats] = useState({ paidCount: 0, paidAmount: 0, pending: 0, refunded: 0 });
+  const [orders, setOrders] = useState<OrderRow[]>([]); const [total, setTotal] = useState(0); const [pageSize, setPageSize] = useState(20); const [page, setPage] = useState(1); const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState({ channel: "", status: "", plan: "", email: "" });
+  const [detail, setDetail] = useState<OrderDetail | null>(null);
+  const [create, setCreate] = useState({ email: "", plan: "annual", send: true }); const [createMessage, setCreateMessage] = useState("");
+
+  async function load(targetPage: number, source = filters) {
+    const params = new URLSearchParams({ page: String(targetPage), pageSize: "20" });
+    for (const key of ["channel", "status", "plan", "email"] as const) if (source[key]) params.set(key, source[key]);
+    try {
+      const data = await requestJson<{ total: number; page: number; pageSize: number; orders: OrderRow[]; stats: StatsRow[] }>(`/api/admin/orders?${params}`);
+      const summary = { paidCount: 0, paidAmount: 0, pending: 0, refunded: 0 };
+      for (const row of data.stats ?? []) {
+        if (row.status === "paid") { summary.paidCount += Number(row.order_count); summary.paidAmount += Number(row.paid_amount_fen ?? 0); }
+        else if (row.status === "created" || row.status === "closed") summary.pending += Number(row.order_count);
+        else if (row.status === "refunded") summary.refunded += Number(row.order_count);
+      }
+      setStats(summary); setOrders(data.orders); setTotal(data.total); setPageSize(data.pageSize); setPage(data.page);
+    } catch (reason) { fail(reason); } finally { setLoading(false); }
+  }
+  useEffect(() => { load(1); }, []);
+
+  async function openDetail(order: OrderRow) {
+    setDetail({ order, license: null, devices: [] });
+    if (!order.license) return;
+    try {
+      const data = await requestJson<{ license: LicenseFull; devices: DeviceRow[] }>(`/api/admin/orders?licenseId=${encodeURIComponent(order.license.id)}`);
+      setDetail({ order, license: data.license, devices: data.devices ?? [] });
+    } catch (reason) { fail(reason); setDetail(null); }
+  }
+
+  async function act(action: string, payload: Record<string, unknown>, options: { confirm?: string; success?: string; licenseId?: string } = {}) {
+    if (options.confirm && !window.confirm(options.confirm)) return;
+    try {
+      await requestJson("/api/admin/orders", { method: "POST", headers: { "content-type": "application/json", "x-csrf-token": csrf }, body: JSON.stringify({ action, ...payload }) });
+      if (options.success) flash(options.success);
+      const jobs: Array<Promise<void>> = [load(page)];
+      if (options.licenseId) jobs.push((async () => {
+        const data = await requestJson<{ license: LicenseFull; devices: DeviceRow[] }>(`/api/admin/orders?licenseId=${encodeURIComponent(options.licenseId!)}`);
+        setDetail((current) => current && current.license?.id === options.licenseId ? { ...current, license: data.license, devices: data.devices ?? [] } : current);
+      })());
+      await Promise.all(jobs);
+    } catch (reason) { fail(reason); }
+  }
+
+  async function submitCreate() {
+    const email = create.email.trim().toLowerCase();
+    if (!email.includes("@")) { setCreateMessage("请输入有效的客户邮箱。"); return; }
+    setCreateMessage("");
+    try {
+      const data = await requestJson<{ license: { licenseKey: string; emailSentAt: string | null } }>("/api/admin/orders", { method: "POST", headers: { "content-type": "application/json", "x-csrf-token": csrf }, body: JSON.stringify({ action: "license.create", email, plan: create.plan, sendEmail: create.send }) });
+      setCreateMessage(`已创建激活码 ${data.license.licenseKey}（${data.license.emailSentAt ? "邮件已发送" : "未发送邮件"}）。`);
+      setCreate({ email: "", plan: create.plan, send: create.send });
+      await load(page);
+    } catch (reason) { setCreateMessage(reason instanceof Error ? reason.message : "创建失败"); }
+  }
+
+  function search() { setLoading(true); setDetail(null); load(1); }
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  return <section className="admin-stack">
+    <div className="stat-grid">
+      <article className="metric"><span>已支付订单</span><strong>{stats.paidCount}</strong><small>支付宝 + 微信</small></article>
+      <article className="metric"><span>实收合计</span><strong>{formatYuan(stats.paidAmount)}</strong><small>已支付订单金额</small></article>
+      <article className="metric"><span>待支付 / 关闭</span><strong>{stats.pending}</strong><small>未成交订单</small></article>
+      <article className="metric"><span>已退款</span><strong>{stats.refunded}</strong><small>激活码已自动吊销</small></article>
+    </div>
+    <article className="admin-card"><h2>补偿发放激活码</h2><p className="hint">为客户手动创建激活码（source=manual，不限期），可选同步发送确认邮件。</p>
+      <div className="orders-filters" style={{ marginTop: 14 }}>
+        <input type="email" placeholder="客户邮箱" value={create.email} onChange={(e) => setCreate({ ...create, email: e.target.value })} />
+        <select value={create.plan} onChange={(e) => setCreate({ ...create, plan: e.target.value })}><option value="annual">年度授权</option><option value="lifetime">永久授权</option></select>
+        <label className="check"><input type="checkbox" checked={create.send} onChange={(e) => setCreate({ ...create, send: e.target.checked })} /> 发送邮件</label>
+        <button className="admin-primary" onClick={submitCreate}>创建激活码</button>
+      </div>
+      {createMessage && <p className="hint">{createMessage}</p>}
+    </article>
+    <article className="admin-card"><div className="card-heading"><div><h2>订单</h2><p>点击行查看激活码与绑定设备。</p></div>
+      <div className="orders-filters">
+        <select value={filters.channel} onChange={(e) => setFilters({ ...filters, channel: e.target.value })}><option value="">全部渠道</option><option value="alipay">支付宝</option><option value="wechat">微信</option></select>
+        <select value={filters.status} onChange={(e) => setFilters({ ...filters, status: e.target.value })}><option value="">全部状态</option>{Object.entries(orderStatuses).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
+        <select value={filters.plan} onChange={(e) => setFilters({ ...filters, plan: e.target.value })}><option value="">全部方案</option>{Object.entries(orderPlans).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
+        <input type="email" placeholder="按邮箱精确搜索" value={filters.email} onChange={(e) => setFilters({ ...filters, email: e.target.value })} onKeyDown={(e) => e.key === "Enter" && search()} />
+        <button onClick={search}>查询</button>
+      </div></div>
+      <div className="table-wrap"><table className="data-table">
+        <thead><tr><th>时间</th><th>渠道</th><th>方案</th><th>金额</th><th>状态</th><th>邮箱</th><th>订单号</th><th>激活码</th><th>设备</th></tr></thead>
+        <tbody>{loading ? <tr className="static"><td colSpan={9} className="empty">加载中…</td></tr>
+          : orders.length ? orders.map((order) => <tr key={order.id} onClick={() => openDetail(order)}>
+            <td>{formatTime(order.createdAt)}</td>
+            <td>{orderChannels[order.channel] ?? order.channel}</td>
+            <td>{orderPlans[order.plan] ?? order.plan}</td>
+            <td>{formatYuan(order.amountFen)}</td>
+            <td><span className={`pill ${order.status}`}>{orderStatuses[order.status] ?? order.status}</span></td>
+            <td>{order.email}</td>
+            <td className="mono">{order.outTradeNo}</td>
+            <td className="mono">{order.license ? <>{order.license.licenseKey.slice(0, 8)}… <span className={`pill ${order.license.status}`}>{order.license.status === "active" ? "有效" : "已吊销"}</span></> : "—"}</td>
+            <td>{order.license ? `${order.license.devicesUsed}/3` : "—"}</td>
+          </tr>) : <tr className="static"><td colSpan={9} className="empty">没有符合条件的订单</td></tr>}</tbody>
+      </table></div>
+      <div className="pager"><button onClick={() => { setLoading(true); load(page - 1); }} disabled={page <= 1 || loading}>上一页</button><span>第 {page} 页 / 共 {pageCount} 页（{total} 单）</span><button onClick={() => { setLoading(true); load(page + 1); }} disabled={page >= pageCount || loading}>下一页</button></div>
+    </article>
+    {detail && <article className="admin-card"><div className="card-heading"><div><h2>订单详情</h2><p className="mono">{detail.order.outTradeNo}</p></div><button onClick={() => setDetail(null)}>收起</button></div>
+      {!detail.order.license ? <p className="hint">该订单还没有关联激活码（未支付或历史数据）。</p>
+        : !detail.license ? <p className="hint">加载中…</p>
+        : <div className="detail-grid">
+          <div className="detail-box"><h3>订单</h3><dl>
+            <dt>渠道</dt><dd>{orderChannels[detail.order.channel] ?? detail.order.channel}</dd>
+            <dt>方案</dt><dd>{orderPlans[detail.order.plan] ?? detail.order.plan} · {formatYuan(detail.order.amountFen)}</dd>
+            <dt>状态</dt><dd><span className={`pill ${detail.order.status}`}>{orderStatuses[detail.order.status] ?? detail.order.status}</span></dd>
+            <dt>邮箱</dt><dd>{detail.order.email}</dd>
+            <dt>支付时间</dt><dd>{formatTime(detail.order.paidAt)}</dd>
+          </dl></div>
+          <div className="detail-box"><h3>激活码</h3><dl>
+            <dt>激活码</dt><dd className="mono"><strong>{detail.license.license_key}</strong></dd>
+            <dt>状态</dt><dd><span className={`pill ${detail.license.status}`}>{detail.license.status === "active" ? "有效" : "已吊销"}</span></dd>
+            <dt>方案</dt><dd>{orderPlans[detail.license.plan] ?? detail.license.plan}</dd>
+            <dt>有效期至</dt><dd>{detail.license.valid_until ? formatTime(detail.license.valid_until) : "永久"}</dd>
+            <dt>邮件发送</dt><dd>{detail.license.email_sent_at ? formatTime(detail.license.email_sent_at) : "未发送"}</dd>
+          </dl><div className="detail-actions">
+            <button onClick={() => act("license.resendEmail", { licenseId: detail.license!.id }, { success: "邮件已重新发送。", licenseId: detail.license!.id })}>重发邮件</button>
+            {detail.license.status === "active"
+              ? <button className="danger" onClick={() => act("license.revoke", { licenseId: detail.license!.id }, { confirm: "确定吊销该激活码？已绑定的设备将立即失效。", licenseId: detail.license!.id })}>吊销激活码</button>
+              : <button onClick={() => act("license.restore", { licenseId: detail.license!.id }, { confirm: "确定恢复该激活码？", licenseId: detail.license!.id })}>恢复激活码</button>}
+          </div></div>
+          <div className="detail-box wide"><h3>绑定设备（{detail.devices.filter((device) => !device.revoked_at).length}/3 生效中）</h3>
+            {detail.devices.length ? <div className="table-wrap"><table className="data-table">
+              <thead><tr><th>设备名</th><th>设备 ID</th><th>版本</th><th>激活时间</th><th>最近验证</th><th>操作</th></tr></thead>
+              <tbody>{detail.devices.map((device) => <tr key={device.id} className="static">
+                <td>{device.device_name ?? "未知设备"}</td>
+                <td className="mono">{device.device_id.slice(0, 18)}…</td>
+                <td>{device.app_version ?? "—"}</td>
+                <td>{formatTime(device.activated_at)}</td>
+                <td>{formatTime(device.last_seen_at)}</td>
+                <td>{device.revoked_at
+                  ? <span className="pill closed">已解绑 {formatTime(device.revoked_at)}</span>
+                  : <button className="danger" onClick={() => act("device.revoke", { activationId: device.id }, { confirm: "确定远程解绑该设备？解绑后该设备上的 Pro 立即失效。", licenseId: detail.license!.id })}>远程解绑</button>}</td>
+              </tr>)}</tbody>
+            </table></div> : <p className="hint">尚无设备绑定记录。</p>}
+          </div>
+        </div>}
+    </article>}
+  </section>;
 }

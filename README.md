@@ -6,6 +6,9 @@
 
 - 双语官网，收录 ChargePilot、MinuteFlow、ServerHub、Tellyra、Tivon、TuneSync、TailTalk、Lattice、Visto 九款应用。
 - `/admin` 单管理员后台：品牌 Logo、页面文案、产品、媒体、SEO、发布与上一版回滚。
+- `/admin` 订单板块：ChargePilot 支付订单（支付宝/微信）与激活码管理——列表/筛选/汇总、
+  重发确认邮件、吊销/恢复激活码、远程解绑设备、补偿发放激活码。
+  数据存放在 Supabase Postgres（支付回调在那边履约），后台经 service key 服务端直连。
 - 草稿与线上快照分离；发布前的线上版本作为唯一上一版保留。
 - PNG/WebP 上传校验、重新编码和 256px 缩略图。
 - Argon2id 密码、哈希会话令牌、Strict Cookie、CSRF、登录限速和首次改密。
@@ -27,6 +30,13 @@ ZENSOFT_BOOTSTRAP_PASSWORD='请使用至少12位的临时密码' npm run dev
 - `ZENSOFT_ADMIN_USERNAME`：首次初始化用户名，默认 `admin`。
 - `ZENSOFT_BOOTSTRAP_PASSWORD`：首次初始化临时密码。
 - `ZENSOFT_SECURE_COOKIES=false`：仅限本地 HTTP 调试；生产环境不要关闭。
+
+订单板块（可选；未配置时其余后台功能不受影响）：
+
+- `SUPABASE_URL`：Supabase 项目地址。
+- `SUPABASE_SERVICE_KEY`：service role 密钥，仅服务端持有，切勿提交或泄露。
+- `DIRECTMAIL_ACCESS_KEY_ID` / `DIRECTMAIL_ACCESS_KEY_SECRET` / `DIRECTMAIL_ACCOUNT_NAME`：阿里云邮件推送凭据（重发/补发激活码邮件用）。
+- `DIRECTMAIL_FROM_ALIAS`：发件人显示名，默认 `ZenSoft`。
 
 ## 验证
 
