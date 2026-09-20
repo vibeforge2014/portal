@@ -1,30 +1,30 @@
 import type { Metadata } from "next";
 import { SiteShell } from "@/components/SiteShell";
 import { assetPublicUrl, getPublishedContent } from "@/lib/db";
-import { getRequestLanguage } from "@/lib/server-language";
 
 export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+// 静态生成 + ISR：后台发布/回滚时 revalidatePath("/") 即时刷新，60s 兜底自动重新生成。
+export const revalidate = 60;
 
-export async function generateMetadata(): Promise<Metadata> {
+export function generateMetadata(): Metadata {
   const content = getPublishedContent();
-  const language = await getRequestLanguage();
   const logo = assetPublicUrl(content.brand.activeLogoId);
-  const english = language === "en";
   return {
-    title: english ? `${content.brand.name} — Native Apps for Apple Platforms` : content.seo.title,
-    description: english ? `${content.brand.name} develops reliable, privacy-conscious native applications for macOS, iOS, and Apple TV.` : content.seo.description,
+    title: content.seo.title,
+    description: content.seo.description,
     icons: logo ? { icon: logo } : undefined,
     openGraph: {
-      title: english ? `${content.brand.name} — Native Apps for Apple Platforms` : content.seo.openGraphTitle,
-      description: english ? "Native applications from Shaoxing Zhenshu Technology Co., Ltd. for macOS, iOS, and Apple TV." : content.seo.openGraphDescription,
+      title: content.seo.openGraphTitle,
+      description: content.seo.openGraphDescription,
       type: "website",
-      locale: english ? "en_US" : "zh_CN",
+      locale: "zh_CN",
       images: logo ? [logo] : undefined,
     },
   };
 }
 
-export default async function Page() {
-  return <SiteShell content={getPublishedContent()} initialLanguage={await getRequestLanguage()} />;
+export default function Page() {
+  // 初始语言固定 zh（HTML 可整体缓存）；英文浏览器首次访问由
+  // LanguageProvider 在挂载时按 navigator.language 自动切换。
+  return <SiteShell content={getPublishedContent()} initialLanguage="zh" />;
 }
