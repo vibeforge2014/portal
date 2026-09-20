@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import type { SiteContent } from "@/lib/content-schema";
 import type { Product } from "@/data/products";
-import { LANGUAGE_COOKIE, normalizeLanguage, type SiteLanguage } from "@/lib/language";
+import { LANGUAGE_COOKIE, matchAcceptLanguage, normalizeLanguage, type SiteLanguage } from "@/lib/language";
 
 export type Language = SiteLanguage;
 const STORAGE_KEY = "zensoft-language";
@@ -24,8 +24,14 @@ export function LanguageProvider({ children, content, initialLanguage }: { child
 
   useEffect(() => {
     const saved = normalizeLanguage(window.localStorage.getItem(STORAGE_KEY));
-    if (saved && saved !== initialLanguage) setLanguageState(saved);
-    if (saved) persistLanguage(saved);
+    if (saved) {
+      if (saved !== initialLanguage) setLanguageState(saved);
+      persistLanguage(saved);
+      return;
+    }
+    // 首次访问：HTML 按默认语言静态输出，这里按浏览器偏好纠正（替代原服务端 Accept-Language 检测）。
+    const preferred = matchAcceptLanguage(navigator.languages?.join(",") ?? navigator.language);
+    if (preferred !== initialLanguage) setLanguageState(preferred);
   }, [initialLanguage]);
 
   useEffect(() => { document.documentElement.lang = language === "zh" ? "zh-CN" : "en"; }, [language]);
