@@ -16,7 +16,7 @@ deploy_one() {
   echo "==> 发布到 $host : $name"
   ssh "$host" "mkdir -p /opt/zensoft/releases/$name/app"
   rsync -az --exclude '.data' "$SRC/" "$host:/opt/zensoft/releases/$name/app/"
-  ssh "$host" "ln -sfn /opt/zensoft/releases/$name/app /opt/zensoft/current && systemctl restart zensoft"
+  ssh "$host" "ln -sfn /opt/zensoft/releases/$name/app /opt/zensoft/current && chown -R zensoft:zensoft /opt/zensoft/releases/$name && systemctl restart zensoft"
   sleep 4
   ssh "$host" "curl -sS -o /dev/null -m 10 -w '  本机验证: %{http_code}\n' http://127.0.0.1:3000/"
 }

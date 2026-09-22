@@ -1,0 +1,12 @@
+node_modules
+.next
+out
+.git
+.zcode
+.data
+deploy
+tests
+*.pptx
+*.pdf
+tsconfig.tsbuildinfo
+.DS_Store

@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import type { SiteContent } from "@/lib/content-schema";
 import type { Product } from "@/data/products";
 import { LANGUAGE_COOKIE, matchAcceptLanguage, normalizeLanguage, type SiteLanguage } from "@/lib/language";
+import { mediaUrl } from "@/lib/media";
 
 export type Language = SiteLanguage;
 const STORAGE_KEY = "zensoft-language";
@@ -45,14 +46,14 @@ export function LanguageProvider({ children, content, initialLanguage }: { child
       group: "apps",
       accent: { from: product.accentFrom, to: product.accentTo },
       icon: product.glyph,
-      iconSrc: `/api/media/${encodeURIComponent(product.iconAssetId)}`,
+      iconSrc: mediaUrl(product.iconAssetId, 256),
       draft: product.draft,
     }));
     return {
       language,
       setLanguage(next) { persistLanguage(next); setLanguageState(next); },
       text: content.copy[language], products, content,
-      logoUrl: content.brand.activeLogoId === "builtin-grid" ? null : `/api/media/${encodeURIComponent(content.brand.activeLogoId)}`,
+      logoUrl: content.brand.activeLogoId === "builtin-grid" ? null : mediaUrl(content.brand.activeLogoId, 128),
     };
   }, [content, language]);
 

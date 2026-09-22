@@ -49,11 +49,14 @@
 | 备 /etc/nginx/nginx.conf | 默认 server 已钉在 127.0.0.1（勿改回 0.0.0.0） |
 | 主 /usr/local/bin/zensoft-sync.sh | `deploy/zensoft-sync.sh`（cron */5） |
 | 备 /etc/systemd/system/zensoft.service | Docker 运行时单元 |
+| 仓库 deploy/build-linux.sh | 本机一键构建 linux/amd64 产物（arm64 构建 + x64 原生模块替换） |
 | 仓库 deploy/deploy-portal.sh | 双机滚动发布（先备后主） |
 
 ## 运维操作
 
-- **发布**：本机 Docker 构建 → `deploy/deploy-portal.sh <release-name>`（先备后主，零停机）
+- **发布**：`deploy/build-linux.sh` → `deploy/deploy-portal.sh <release-name>`（先备后主，零停机）
+  - ISR 落盘前提：应用对 `/opt/zensoft` 可写（主 systemd `ReadWritePaths` 已含；备机容器勿用 `:ro` 挂载），且 release 目录属主为 zensoft（deploy 脚本已 chown）。否则每分钟刷 "Failed to update prerender cache EROFS"。
+  - sharp 换 x64 后必须补 `sharp/node_modules/semver`（build-linux.sh 已处理），否则 /api/media 整体 500。
 - **回滚一台**：`ssh <host> 'ln -sfn /opt/zensoft/releases/<旧release>/app /opt/zensoft/current && systemctl restart zensoft'`
 - **手动同步**：`ssh root@101.37.124.50 /usr/local/bin/zensoft-sync.sh`
 - **演练**（建议每季度）：
