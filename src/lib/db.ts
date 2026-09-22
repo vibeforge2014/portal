@@ -6,6 +6,7 @@ import Database from "better-sqlite3";
 import { hash } from "argon2";
 import { DEFAULT_CONTENT, PRESET_ASSETS } from "@/data/default-content";
 import { parseSiteContent, type SiteContent } from "@/lib/content-schema";
+import { mediaUrl } from "@/lib/media";
 
 export type AssetRecord = {
   id: string;
@@ -159,11 +160,11 @@ export function getAsset(id: string): AssetRecord | null {
   return listAssets(true).find((asset) => asset.id === id) || null;
 }
 
-export function assetPublicUrl(id: string): string | null {
+export function assetPublicUrl(id: string, width?: number): string | null {
   const asset = getAsset(id);
   if (!asset) return null;
-  if (asset.builtin) return `/api/media/${encodeURIComponent(asset.id)}`;
-  return asset.url || `/api/media/${encodeURIComponent(asset.id)}`;
+  if (!asset.builtin && asset.url) return asset.url;
+  return mediaUrl(asset.id, width);
 }
 
 export function insertAsset(asset: Omit<AssetRecord, "preset" | "builtin" | "archived" | "createdAt" | "url">) {

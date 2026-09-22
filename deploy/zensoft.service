@@ -20,7 +20,8 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectHome=true
 ProtectSystem=strict
-ReadWritePaths=/var/lib/zensoft
+# /opt/zensoft 需可写：ISR 再生成要把页面写回 .next/server/app/（只读会持续报 EROFS）
+ReadWritePaths=/var/lib/zensoft /opt/zensoft
 
 [Install]
 WantedBy=multi-user.target

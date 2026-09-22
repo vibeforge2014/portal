@@ -8,17 +8,20 @@ export const revalidate = 60;
 
 export function generateMetadata(): Metadata {
   const content = getPublishedContent();
-  const logo = assetPublicUrl(content.brand.activeLogoId);
+  const logoId = content.brand.activeLogoId;
+  const favicon = assetPublicUrl(logoId, 64);
+  const ogImage = assetPublicUrl(logoId, 512);
   return {
+    metadataBase: new URL("https://zensoft.top"),
     title: content.seo.title,
     description: content.seo.description,
-    icons: logo ? { icon: logo } : undefined,
+    icons: favicon ? { icon: favicon } : undefined,
     openGraph: {
       title: content.seo.openGraphTitle,
       description: content.seo.openGraphDescription,
       type: "website",
       locale: "zh_CN",
-      images: logo ? [logo] : undefined,
+      images: ogImage ? [ogImage] : undefined,
     },
   };
 }

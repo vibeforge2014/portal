@@ -1,0 +1,19 @@
+# 本机构建专用（架构由 --platform 控制，见 deploy/HA.md）：
+#   1) --platform linux/arm64 跑本 Dockerfile：原生速度执行 next build，产出 standalone
+#   2) 再用 --platform linux/amd64 容器把 better-sqlite3/argon2/sharp 换成 x64 原生模块
+# 基础镜像 = node:22-bookworm-slim + python3/make/g++（deploy/build-linux.sh 会按需自建）
+# 工具链用途：better-sqlite3 等原生依赖在无预编译时兜底源码编译
+FROM zensoft-builder:arm64
+
+WORKDIR /app
+ENV NEXT_TELEMETRY_DISABLED=1
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY . .
+RUN npx next build
+
+# standalone 不含 .next/static 与 public，需手工并入（Next 文档要求）
+RUN cp -r .next/static .next/standalone/.next/static \
+ && cp -r public .next/standalone/public

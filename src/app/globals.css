@@ -291,7 +291,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
   --surface-soft: 239 239 243;
   --fg: 20 20 23;
   --secondary: 91 91 98;
-  --tertiary: 133 133 141;
+  --tertiary: 107 107 115;
   --accent: 69 92 255;
   --header: 255 255 255;
   --ease-out: cubic-bezier(.23, 1, .32, 1);
@@ -305,7 +305,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
     --surface-soft: 34 34 38;
     --fg: 248 248 250;
     --secondary: 180 180 188;
-    --tertiary: 125 125 135;
+    --tertiary: 128 128 138;
     --header: 25 25 28;
   }
 }

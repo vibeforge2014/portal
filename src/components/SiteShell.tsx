@@ -23,7 +23,7 @@ function TopBar() {
       transition={{ duration: .5, ease: [.23, 1, .32, 1] }}
     >
       <nav className="nav-shell" aria-label={text.navLabel}>
-        <a href="#top" className="brand-link" aria-label={text.homeLabel}>
+        <a href="#top" className="brand-link">
           <BrandMark compact logoUrl={logoUrl} />
           <span className="brand-wordmark"><strong>{content.brand.name}</strong><small>NATIVE SOFTWARE</small></span>
         </a>
@@ -73,7 +73,8 @@ function Company() {
       <p className="company-description">{text.companyDescription}</p>
       <div className="company-facts" aria-label={text.companyLabel}>
         {facts.map((fact) => <span key={fact}><i />{fact}</span>)}
-        <a href="mailto:support@zensoft.top"><i />{language === "zh" ? "商务联系" : "Business inquiries"} · support@zensoft.top</a>
+        {/* Cloudflare 邮箱混淆会在水合前改写此链接的文本与 href，必须 suppress 掉 mismatch，否则 React #418 */}
+        <a href="mailto:support@zensoft.top" suppressHydrationWarning><i />{language === "zh" ? "商务联系" : "Business inquiries"} · support@zensoft.top</a>
       </div>
     </motion.section>
   );
