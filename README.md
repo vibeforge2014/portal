@@ -54,3 +54,12 @@ GitHub Actions 只执行构建、测试和安全审计；生产内容不再发�
 生产服务器使用 Node.js 22、Next.js standalone、非 root `zensoft` 用户、systemd 和 Nginx。应用仅监听 `127.0.0.1:3000`，持久数据位于 `/var/lib/zensoft`，版本位于 `/opt/zensoft/releases`。
 
 当前 IP 阶段由 Nginx 提供自签名 HTTPS，并将 `/admin` 从 HTTP 跳转到 HTTPS。`zensoft.top` DNS 生效后，应更换为受信任证书并开启全站 HTTPS。
+
+### 在 macOS 上出包给 Linux 服务器的坑（2026-09-22 实测）
+
+Next standalone 的文件追踪只复制构建机上实际加载的原生二进制：Mac 上 `next build`
+出的包里 better-sqlite3 / argon2 只有 darwin-arm64，Linux 服务器启动即报
+`No native build was found for platform=linux arch=x64`。打包后必须把本机
+`node_modules/{better-sqlite3,argon2}/prebuilds/` 全平台目录补进产物（或改在
+Linux CI 出包），并删掉产物里冒烟测试遗留的 `.data/`。完整流程与回滚命令见
+部署机上的 `portal-deploy-*/DEPLOY.md`。
