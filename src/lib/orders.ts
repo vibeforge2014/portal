@@ -398,7 +398,7 @@ export function purchaseEmailHtml(license: LicenseRow): string {
           <td style="padding:22px 32px 30px;">
             <p style="margin:0;font-size:12px;color:#8a959e;line-height:1.8;">
               首次购买适用 14 天退款政策。订单或激活问题请联系：
-              <a href="mailto:qianzhen2014@126.com" style="color:#1a7f4b;">qianzhen2014@126.com</a><br>
+              <a href="mailto:support@zensoft.top" style="color:#1a7f4b;">support@zensoft.top</a><br>
               本邮件由系统自动发送，请勿直接回复。
             </p>
           </td>
