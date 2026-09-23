@@ -1,0 +1,35 @@
+# 二号机（139.224.228.193）Docker 运行时单元 — /etc/systemd/system/zensoft.service
+# 与主机的裸机 systemd 单元（deploy/zensoft.service）等价，但用 node:22-bookworm-slim 容器运行，
+# 以规避二号机 Alibaba Cloud Linux 3 (glibc 2.32) 与 better-sqlite3/argon2/sharp 原生模块的兼容问题。
+# /app 挂载必须可写（无 :ro）：Next.js ISR 会在 revalidate 后回写 .next/server/app/ 下的预渲染文件，
+# 只读挂载会导致每 60 秒一次的 EROFS 报错并使页面缓存永不刷新（2026-09-23 已修复）。
+
+[Unit]
+Description=ZenSoft Next.js application (Docker runtime)
+After=docker.service network-online.target
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=simple
+TimeoutStartSec=180
+ExecStartPre=-/usr/bin/docker rm -f zensoft-app
+ExecStart=/usr/bin/docker run --name zensoft-app \
+  -e NODE_ENV=production \
+  -e HOSTNAME=0.0.0.0 \
+  -e PORT=3000 \
+  -e ZENSOFT_DATA_DIR=/var/lib/zensoft/data \
+  -e ZENSOFT_UPLOAD_DIR=/var/lib/zensoft/uploads \
+  --env-file /etc/zensoft/zensoft.env \
+  -p 127.0.0.1:3000:3000 \
+  -v /var/lib/zensoft:/var/lib/zensoft \
+  -v /opt/zensoft/current:/app \
+  -w /app \
+  --memory 512m --cpus 1.5 \
+  --log-driver json-file --log-opt max-size=10m --log-opt max-file=3 \
+  node:22-bookworm-slim node server.js
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
