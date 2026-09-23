@@ -48,7 +48,7 @@
 | 备 /etc/nginx/conf.d/zensoft-internal.conf | `deploy/zensoft-ha-secondary-internal.conf`（8443 内网后端） |
 | 备 /etc/nginx/nginx.conf | 默认 server 已钉在 127.0.0.1（勿改回 0.0.0.0） |
 | 主 /usr/local/bin/zensoft-sync.sh | `deploy/zensoft-sync.sh`（cron */5） |
-| 备 /etc/systemd/system/zensoft.service | Docker 运行时单元 |
+| 备 /etc/systemd/system/zensoft.service | `deploy/zensoft-secondary-docker.service`（Docker 运行时；/app 挂载必须可写，ISR 回写需要） |
 | 仓库 deploy/build-linux.sh | 本机一键构建 linux/amd64 产物（arm64 构建 + x64 原生模块替换） |
 | 仓库 deploy/deploy-portal.sh | 双机滚动发布（先备后主） |
 
