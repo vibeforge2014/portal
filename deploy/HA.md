@@ -49,6 +49,8 @@
 | 备 /etc/nginx/nginx.conf | 默认 server 已钉在 127.0.0.1（勿改回 0.0.0.0） |
 | 主 /usr/local/bin/zensoft-sync.sh | `deploy/zensoft-sync.sh`（cron */5） |
 | 备 /etc/systemd/system/zensoft.service | `deploy/zensoft-secondary-docker.service`（Docker 运行时；/app 挂载必须可写，ISR 回写需要） |
+| 备 /etc/ssh/sshd_config | 密码登录已关闭（`PasswordAuthentication no` + `PermitRootLogin prohibit-password`，仅密钥；Mac id_ed25519 与主同步密钥在 authorized_keys） |
+| 备 /etc/sysctl.d/99-zensoft-no-ping.conf | 内核禁 ping（`net.ipv4.icmp_echo_ignore_all=1`，只忽略 echo-request，不影响 PMTUD/SSH/同步） |
 | 仓库 deploy/build-linux.sh | 本机一键构建 linux/amd64 产物（arm64 构建 + x64 原生模块替换） |
 | 仓库 deploy/deploy-portal.sh | 双机滚动发布（先备后主） |
 
