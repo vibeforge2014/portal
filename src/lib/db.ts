@@ -33,7 +33,10 @@ fs.mkdirSync(uploadRoot, { recursive: true });
 
 const db = new Database(databasePath);
 db.pragma("busy_timeout = 10000");
-db.pragma("journal_mode = WAL");
+// next build 的多个 worker 会并发加载本模块；journal_mode 变更在有其他连接持库时
+// 立即返回 SQLITE_BUSY 且不经过 busy_timeout。WAL 是库文件的持久属性，竞态赢家设过即可。
+try { db.pragma("journal_mode = WAL"); } catch { /* 输家继续，WAL 已由赢家写入 */ }
+db.pragma("foreign_keys = ON");
 db.pragma("foreign_keys = ON");
 db.exec(`
   CREATE TABLE IF NOT EXISTS admins (

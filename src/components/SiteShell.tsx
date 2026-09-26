@@ -82,7 +82,7 @@ function Company() {
 
 function Footer() {
   const { language, text, content, logoUrl } = useLanguage();
-  return <footer className="site-footer"><a href="#top" className="footer-brand"><BrandMark compact logoUrl={logoUrl} /><span>{content.brand.name}</span></a><p>{text.footer}</p><div className="footer-legal"><span>© {new Date().getFullYear()} {text.companyName} · {language === "zh" ? "版权所有" : "All rights reserved."}</span><a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">浙ICP备2026072549号</a></div></footer>;
+  return <footer className="site-footer"><a href="#top" className="footer-brand"><BrandMark compact logoUrl={logoUrl} /><span>{content.brand.name}</span></a><p>{text.footer}</p><div className="footer-legal"><span>© {new Date().getFullYear()} {text.companyName} · {language === "zh" ? "版权所有" : "All rights reserved."}</span><a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">浙ICP备2026072549号</a><a href="https://beian.mps.gov.cn/#/query/webSearch?code=33060402002121" target="_blank" rel="noopener noreferrer">浙公网安备33060402002121号</a></div></footer>;
 }
 
 export function SiteShell({ content, initialLanguage }: { content: SiteContent; initialLanguage: SiteLanguage }) {
