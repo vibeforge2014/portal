@@ -54,7 +54,8 @@
 
 | 位置 | 内容 |
 |---|---|
-| 主 /etc/nginx/conf.d/zensoft.conf | `deploy/zensoft-ha-primary.conf`（upstream SLB + admin 固定本机） |
+| 主 /etc/nginx/conf.d/zensoft.conf | `deploy/zensoft-ha-primary.conf`（upstream 三路 SLB + admin 固定本机） |
+| 主 /etc/nginx/snippets/zensoft-static-meta.conf | `deploy/zensoft-static-meta.conf`（robots/sitemap 由 nginx 静态直出，内容与 app/robots.ts、sitemap.ts 保持同步；修 Lighthouse 抓取超时） |
 | 备 /etc/nginx/conf.d/zensoft-internal.conf | `deploy/zensoft-ha-secondary-internal.conf`（8443 内网后端） |
 | 备 /etc/nginx/nginx.conf | 默认 server 已钉在 127.0.0.1（勿改回 0.0.0.0） |
 | 主 /usr/local/bin/zensoft-sync.sh | `deploy/zensoft-sync.sh`（cron */5，双目标：二号机 22 端口 / 三号机 8222 端口） |
