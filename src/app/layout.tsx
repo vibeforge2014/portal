@@ -1,5 +1,6 @@
 import type { Viewport } from "next";
 import { ThemeScript } from "@/components/ThemeScript";
+import { PdfLocaleScript } from "@/components/PdfLocaleScript";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -22,6 +23,7 @@ export default function RootLayout({
     <html lang="zh-CN" suppressHydrationWarning>
       <head>
         <ThemeScript />
+        <PdfLocaleScript />
       </head>
       <body>{children}</body>
     </html>

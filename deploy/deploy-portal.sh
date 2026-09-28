@@ -1,38 +1,64 @@
 #!/bin/bash
-# zensoft portal 滚动发布：本机 Docker 构建产物 → 三台服务器（先二号机、再三号机、后主机）
-# 依赖：deploy/AGENTS.md 红线 —— 产物必须来自本机 Docker linux/amd64 构建，禁止在服务器上编译。
-# 用法：deploy/deploy-portal.sh <release-name，如 20260921-xxx>
+# Publish a locally built Linux standalone release to the three live portal nodes.
+# Never build on a server. The primary relays files to the two backends using its
+# existing sync key, so this Mac only needs its primary deploy key.
 set -euo pipefail
 
-RELEASE_NAME="${1:?用法: deploy-portal.sh <release-name>}"
+RELEASE_NAME="${1:?用法: deploy/deploy-portal.sh <release-name>}"
+[[ "$RELEASE_NAME" =~ ^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$ ]] || { echo "无效的 release 名称" >&2; exit 1; }
+
 SRC="${SRC:-/tmp/zensoft-linux-build/.next/standalone}"
-[ -f "$SRC/server.js" ] || { echo "未找到构建产物 $SRC/server.js（先在本机 Docker 构建）"; exit 1; }
+DEPLOY_KEY="${ZENSOFT_DEPLOY_KEY:-$HOME/.ssh/zensoft_deploy}"
+PRIMARY="root@101.37.124.50"
+SECONDARY_HOST="${ZENSOFT_SECONDARY_HOST:-139.224.228.193}"
+THIRD_HOST="${ZENSOFT_THIRD_HOST:-39.184.194.28}" # 家宽动态 IP，变更时显式覆盖
+REMOTE="/opt/zensoft/releases/$RELEASE_NAME/app"
 
-# host|ssh端口|本机验证端口
-# 三号机 39.184.194.28：SSH 走路由器映射的 8222；应用监听 13000（3000 被 new-api 占用）
-# 三号机为家宽动态 IP，重拨后需更新此 IP 与主 nginx upstream。
-NODES=(
-  "root@139.224.228.193|22|3000"
-  "root@39.184.194.28|8222|13000"
-  "root@101.37.124.50|22|3000"
-)
+[[ -f "$SRC/server.js" && -d "$SRC/.next/static" && -d "$SRC/public" ]] || { echo "缺少完整本机构建产物: $SRC" >&2; exit 1; }
+[[ -f "$DEPLOY_KEY" ]] || { echo "缺少主机部署密钥: $DEPLOY_KEY" >&2; exit 1; }
+[[ "$SECONDARY_HOST" =~ ^[0-9.]+$ && "$THIRD_HOST" =~ ^[0-9.]+$ ]] || { echo "后端 IP 无效" >&2; exit 1; }
 
-deploy_one() {
-  local host="$1" name="$2" ssh_port="$3" verify_port="$4"
-  echo "==> 发布到 $host : $name"
-  ssh -p "$ssh_port" "$host" "mkdir -p /opt/zensoft/releases/$name/app"
-  rsync -az -e "ssh -p $ssh_port" --exclude '.data' "$SRC/" "$host:/opt/zensoft/releases/$name/app/"
-  ssh -p "$ssh_port" "$host" "ln -sfn /opt/zensoft/releases/$name/app /opt/zensoft/current && chown -R zensoft:zensoft /opt/zensoft/releases/$name && systemctl restart zensoft"
-  sleep 4
-  ssh -p "$ssh_port" "$host" "curl -sS -o /dev/null -m 10 -w '  本机验证: %{http_code}\n' http://127.0.0.1:$verify_port/"
+primary_ssh() {
+  ssh -i "$DEPLOY_KEY" -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=8 "$PRIMARY" "$@"
 }
 
-# 顺序：二号机 → 三号机 → 主机（主机最后重启，全程由备机承接）
-for spec in "${NODES[@]}"; do
-  IFS='|' read -r host ssh_port verify_port <<< "$spec"
-  deploy_one "$host" "$RELEASE_NAME" "$ssh_port" "$verify_port"
-done
+backend_ssh() {
+  local host="$1" port="$2" command="$3"
+  primary_ssh "ssh -i /root/.ssh/zensoft_sync -o BatchMode=yes -o ConnectTimeout=8 -p $port root@$host '$command'"
+}
+
+deploy_backend() {
+  local host="$1" port="$2" app_port="$3"
+  echo "==> 后端 $host:$port"
+  backend_ssh "$host" "$port" "test ! -e '$REMOTE' && mkdir -p '$REMOTE'"
+  primary_ssh "rsync -az --timeout=120 --exclude .data -e 'ssh -i /root/.ssh/zensoft_sync -o BatchMode=yes -o ConnectTimeout=8 -p $port' '$REMOTE/' 'root@$host:$REMOTE/'"
+  backend_ssh "$host" "$port" "chown -R zensoft:zensoft '/opt/zensoft/releases/$RELEASE_NAME' && ln -sfn '$REMOTE' /opt/zensoft/current && systemctl restart zensoft"
+  backend_ssh "$host" "$port" "curl --retry 5 --retry-connrefused --retry-delay 1 -fsS http://127.0.0.1:$app_port/api/health/ | grep -q ok"
+  backend_ssh "$host" "$port" "curl --retry 5 --retry-connrefused --retry-delay 1 -fsS -o /dev/null http://127.0.0.1:$app_port/"
+}
+
+echo "==> 预检三台节点"
+primary_ssh "test ! -e '$REMOTE'"
+backend_ssh "$SECONDARY_HOST" 22 "test ! -e '$REMOTE'"
+backend_ssh "$THIRD_HOST" 8222 "test ! -e '$REMOTE'"
+
+echo "==> 上传到主机暂存目录（不切换流量）"
+primary_ssh "mkdir -p '$REMOTE'"
+RSYNC_RSH="ssh -i $DEPLOY_KEY -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=8" \
+  rsync -az --timeout=120 --exclude '.data' "$SRC/" "$PRIMARY:$REMOTE/"
+
+deploy_backend "$SECONDARY_HOST" 22 3000
+deploy_backend "$THIRD_HOST" 8222 13000
+
+echo "==> 切换主机"
+primary_ssh "chown -R zensoft:zensoft '/opt/zensoft/releases/$RELEASE_NAME' && ln -sfn '$REMOTE' /opt/zensoft/current && systemctl restart zensoft"
+primary_ssh "curl --retry 5 --retry-connrefused --retry-delay 1 -fsS http://127.0.0.1:3000/api/health/ | grep -q '\"status\":\"ok\"'"
+primary_ssh "curl --retry 5 --retry-connrefused --retry-delay 1 -fsS -o /dev/null http://127.0.0.1:3000/"
+
+echo "==> 更新 nginx 静态站点地图"
+primary_ssh "curl -fsSL http://127.0.0.1:3000/sitemap.xml -o /var/www/zensoft/sitemap.xml.new && grep -q '<urlset' /var/www/zensoft/sitemap.xml.new && chmod 0644 /var/www/zensoft/sitemap.xml.new && mv /var/www/zensoft/sitemap.xml.new /var/www/zensoft/sitemap.xml"
+primary_ssh "curl -fsS -H 'Host: zensoft.top' http://127.0.0.1/sitemap.xml | cmp - /var/www/zensoft/sitemap.xml"
 
 echo "==> 公网验证"
-curl -sS -o /dev/null -m 15 -w "https://www.zensoft.top/ : %{http_code}\n" https://www.zensoft.top/
-echo "完成。回滚: ssh -p <ssh端口> <host> 'ln -sfn /opt/zensoft/releases/<旧release>/app /opt/zensoft/current && systemctl restart zensoft'"
+curl -fsS -o /dev/null -w "https://www.zensoft.top/ : %{http_code}\n" https://www.zensoft.top/
+echo "发布完成：$RELEASE_NAME"
