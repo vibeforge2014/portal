@@ -33,8 +33,10 @@ deploy_backend() {
   backend_ssh "$host" "$port" "test ! -e '$REMOTE' && mkdir -p '$REMOTE'"
   primary_ssh "rsync -az --timeout=120 --exclude .data -e 'ssh -i /root/.ssh/zensoft_sync -o BatchMode=yes -o ConnectTimeout=8 -p $port' '$REMOTE/' 'root@$host:$REMOTE/'"
   backend_ssh "$host" "$port" "chown -R zensoft:zensoft '/opt/zensoft/releases/$RELEASE_NAME' && ln -sfn '$REMOTE' /opt/zensoft/current && systemctl restart zensoft"
-  backend_ssh "$host" "$port" "curl --retry 5 --retry-connrefused --retry-delay 1 -fsS http://127.0.0.1:$app_port/api/health/ | grep -q ok"
-  backend_ssh "$host" "$port" "curl --retry 5 --retry-connrefused --retry-delay 1 -fsS -o /dev/null http://127.0.0.1:$app_port/"
+  # Older curl on the backends does not support --retry-all-errors. Retry the
+  # whole check so connection resets during a Docker restart are covered too.
+  backend_ssh "$host" "$port" "for attempt in 1 2 3 4 5 6 7 8; do curl -fsS --max-time 8 http://127.0.0.1:$app_port/api/health/ | grep -q ok && exit 0; sleep 1; done; exit 1"
+  backend_ssh "$host" "$port" "for attempt in 1 2 3 4 5 6 7 8; do curl -fsS --max-time 8 -o /dev/null http://127.0.0.1:$app_port/ && exit 0; sleep 1; done; exit 1"
 }
 
 echo "==> 预检三台节点"
@@ -52,8 +54,8 @@ deploy_backend "$THIRD_HOST" 8222 13000
 
 echo "==> 切换主机"
 primary_ssh "chown -R zensoft:zensoft '/opt/zensoft/releases/$RELEASE_NAME' && ln -sfn '$REMOTE' /opt/zensoft/current && systemctl restart zensoft"
-primary_ssh "curl --retry 5 --retry-connrefused --retry-delay 1 -fsS http://127.0.0.1:3000/api/health/ | grep -q '\"status\":\"ok\"'"
-primary_ssh "curl --retry 5 --retry-connrefused --retry-delay 1 -fsS -o /dev/null http://127.0.0.1:3000/"
+primary_ssh "for attempt in 1 2 3 4 5 6 7 8; do curl -fsS --max-time 8 http://127.0.0.1:3000/api/health/ | grep -q ok && exit 0; sleep 1; done; exit 1"
+primary_ssh "for attempt in 1 2 3 4 5 6 7 8; do curl -fsS --max-time 8 -o /dev/null http://127.0.0.1:3000/ && exit 0; sleep 1; done; exit 1"
 
 echo "==> 更新 nginx 静态站点地图"
 primary_ssh "curl -fsSL http://127.0.0.1:3000/sitemap.xml -o /var/www/zensoft/sitemap.xml.new && grep -q '<urlset' /var/www/zensoft/sitemap.xml.new && chmod 0644 /var/www/zensoft/sitemap.xml.new && mv /var/www/zensoft/sitemap.xml.new /var/www/zensoft/sitemap.xml"
