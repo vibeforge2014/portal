@@ -25,11 +25,11 @@ for spec in "${TARGETS[@]}"; do
   IFS='|' read -r host ssh_port <<< "$spec"
   E="ssh ${SSH_OPTS[*]} -p $ssh_port"
   # 先传数据，全部成功后才重启目标应用（失败则保持目标旧数据，一致性优先）
-  rsync -az --timeout=60 -e "$E" /tmp/zensoft-sync/zensoft.db root@$host:/var/lib/zensoft/data/zensoft.db
-  rsync -az --delete --timeout=60 -e "$E" /var/lib/zensoft/uploads/ root@$host:/var/lib/zensoft/uploads/
-  rsync -az --delete --timeout=60 -e "$E" /var/www/zensoft/sites/ root@$host:/var/www/zensoft/sites/
+  rsync -az --timeout=60 -e "$E" /tmp/zensoft-sync/zensoft.db "root@$host:/var/lib/zensoft/data/zensoft.db"
+  rsync -az --delete --timeout=60 -e "$E" /var/lib/zensoft/uploads/ "root@$host:/var/lib/zensoft/uploads/"
+  rsync -az --delete --timeout=60 -e "$E" /var/www/zensoft/sites/ "root@$host:/var/www/zensoft/sites/"
   # 目标 Node 持有旧数据库文件句柄，清 WAL 并重启后加载新库
-  ssh "${SSH_OPTS[@]}" -p "$ssh_port" root@$host 'rm -f /var/lib/zensoft/data/zensoft.db-wal /var/lib/zensoft/data/zensoft.db-shm; chown zensoft:zensoft /var/lib/zensoft/data/zensoft.db /var/lib/zensoft/uploads /var/www/zensoft/sites; systemctl restart zensoft'
+  ssh "${SSH_OPTS[@]}" -p "$ssh_port" "root@$host" 'rm -f /var/lib/zensoft/data/zensoft.db-wal /var/lib/zensoft/data/zensoft.db-shm; chown zensoft:zensoft /var/lib/zensoft/data/zensoft.db /var/lib/zensoft/uploads /var/www/zensoft/sites; systemctl restart zensoft'
 done
 
 echo "$(date '+%F %T') sync ok"

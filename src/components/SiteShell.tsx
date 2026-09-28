@@ -27,8 +27,9 @@ function TopBar() {
           <BrandMark compact logoUrl={logoUrl} />
           <span className="brand-wordmark"><strong>{content.brand.name}</strong><small>NATIVE SOFTWARE</small></span>
         </a>
-        <div className="nav-links"><a href="#products">{text.apps}</a><a href="#company">{text.companyLabel}</a><a href="#principles">{text.principles}</a></div>
+        <div className="nav-links"><a href="#products">{text.apps}</a><a href={language === "zh" ? "/zh-hans/tools/pdf/" : "/en/tools/pdf/"}>{language === "zh" ? "工具" : "Tools"}</a><a href="#company">{text.companyLabel}</a><a href="#principles">{text.principles}</a></div>
         <div className="nav-actions">
+          <a className="mobile-tools-link" href={language === "zh" ? "/zh-hans/tools/pdf/" : "/en/tools/pdf/"}>{language === "zh" ? "工具" : "Tools"}</a>
           <button type="button" className="language-toggle" aria-label={text.languageLabel} onClick={() => setLanguage(language === "zh" ? "en" : "zh")}>{text.language}</button>
         </div>
       </nav>
@@ -82,7 +83,7 @@ function Company() {
 
 function Footer() {
   const { language, text, content, logoUrl } = useLanguage();
-  return <footer className="site-footer"><a href="#top" className="footer-brand"><BrandMark compact logoUrl={logoUrl} /><span>{content.brand.name}</span></a><p>{text.footer}</p><div className="footer-legal"><span>© {new Date().getFullYear()} {text.companyName} · {language === "zh" ? "版权所有" : "All rights reserved."}</span><a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">浙ICP备2026072549号</a><a href="https://beian.mps.gov.cn/#/query/webSearch?code=33060402002121" target="_blank" rel="noopener noreferrer">浙公网安备33060402002121号</a></div></footer>;
+  return <footer className="site-footer"><a href="#top" className="footer-brand"><BrandMark compact logoUrl={logoUrl} /><span>{content.brand.name}</span></a><p>{text.footer} <a href={language === "zh" ? "/zh-hans/tools/pdf/" : "/en/tools/pdf/"}>{language === "zh" ? "PDF 工具" : "PDF tools"}</a></p><div className="footer-legal"><span>© {new Date().getFullYear()} {text.companyName} · {language === "zh" ? "版权所有" : "All rights reserved."}</span><a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">浙ICP备2026072549号</a><a href="https://beian.mps.gov.cn/#/query/webSearch?code=33060402002121" target="_blank" rel="noopener noreferrer">浙公网安备33060402002121号</a></div></footer>;
 }
 
 export function SiteShell({ content, initialLanguage }: { content: SiteContent; initialLanguage: SiteLanguage }) {
