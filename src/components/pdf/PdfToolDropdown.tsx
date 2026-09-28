@@ -4,17 +4,20 @@ import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { PDF_COPY, pdfUrl, type PdfLocale, type PdfTool } from "@/lib/pdf-tools";
 
-const GROUPS: { key: "organize" | "optimize" | "edit"; tools: PdfTool[] }[] = [
-  { key: "organize", tools: ["merge", "split", "remove-pages", "extract-pages"] },
+const GROUPS: { key: "organize" | "optimize" | "convert" | "edit"; tools: PdfTool[] }[] = [
+  { key: "organize", tools: ["merge", "split", "remove-pages", "extract-pages", "organize"] },
   { key: "optimize", tools: ["compress"] },
-  { key: "edit", tools: ["rotate"] },
+  { key: "convert", tools: ["jpg-to-pdf", "pdf-to-jpg"] },
+  { key: "edit", tools: ["rotate", "page-numbers", "watermark"] },
 ];
 
 const GROUP_LABELS: Record<PdfLocale, Record<(typeof GROUPS)[number]["key"], string>> = {
-  "zh-hans": { organize: "整理 PDF", optimize: "优化 PDF", edit: "编辑 PDF" },
-  "zh-hant": { organize: "整理 PDF", optimize: "最佳化 PDF", edit: "編輯 PDF" },
-  en: { organize: "Organize PDF", optimize: "Optimize PDF", edit: "Edit PDF" },
+  "zh-hans": { organize: "整理 PDF", optimize: "优化 PDF", convert: "转换 PDF", edit: "编辑 PDF" },
+  "zh-hant": { organize: "整理 PDF", optimize: "最佳化 PDF", convert: "轉換 PDF", edit: "編輯 PDF" },
+  en: { organize: "Organize PDF", optimize: "Optimize PDF", convert: "Convert PDF", edit: "Edit PDF" },
 };
+
+const TOOL_GLYPHS: Record<PdfTool, string> = { merge: "⇄", split: "✂", "remove-pages": "×", "extract-pages": "▤", organize: "↕", compress: "↘", "jpg-to-pdf": "▧", "pdf-to-jpg": "▣", rotate: "↻", "page-numbers": "#", watermark: "W" };
 
 export function PdfToolDropdown({ locale, compact = false }: { locale: PdfLocale; compact?: boolean }) {
   const detailsRef = useRef<HTMLDetailsElement>(null);
@@ -52,7 +55,7 @@ export function PdfToolDropdown({ locale, compact = false }: { locale: PdfLocale
               {group.tools.map((tool) => (
                 <li key={tool}>
                   <a href={pdfUrl(locale, tool)} aria-current={pathname === pdfUrl(locale, tool) ? "page" : undefined}>
-                    <span className={`pdf-dropdown-icon pdf-dropdown-icon--${tool}`} aria-hidden>{tool === "merge" ? "⇄" : tool === "split" ? "✂" : tool === "compress" ? "↘" : tool === "rotate" ? "↻" : tool === "remove-pages" ? "×" : "▤"}</span>
+                    <span className={`pdf-dropdown-icon pdf-dropdown-icon--${tool}`} aria-hidden>{TOOL_GLYPHS[tool]}</span>
                     <span>{copy.toolsCopy[tool].title}</span>
                   </a>
                 </li>
