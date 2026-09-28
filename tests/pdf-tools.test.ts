@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { unzipSync } from "fflate";
 import { PDFDocument } from "pdf-lib";
-import { compressPdf, mergePdfs, parsePageRange, splitPdf } from "../src/lib/pdf-operations";
+import { compressPdf, mergePdfs, parsePageRange, removePdfPages, rotatePdf, splitPdf } from "../src/lib/pdf-operations";
 
 async function sampleFile(name: string, pageWidths: number[]): Promise<File> {
   const pdf = await PDFDocument.create();
@@ -43,4 +43,20 @@ test("structure compression never replaces a file with a larger result", async (
   const result = await compressPdf(source, "structure", "balanced");
   assert.ok(result.bytes.byteLength <= source.size);
   assert.equal((await PDFDocument.load(result.bytes)).getPageCount(), 1);
+});
+
+test("removes selected pages but keeps at least one", async () => {
+  const source = await sampleFile("source.pdf", [101, 102, 103, 104]);
+  const result = await removePdfPages(source, [1, 3]);
+  const remaining = await PDFDocument.load(result.bytes);
+  assert.deepEqual(remaining.getPages().map((page) => page.getWidth()), [101, 103]);
+  await assert.rejects(removePdfPages(source, [0, 1, 2, 3]), /cannot-remove-all/);
+});
+
+test("rotates each page relative to its current orientation", async () => {
+  const source = await sampleFile("source.pdf", [101, 102]);
+  const first = await rotatePdf(source, 90);
+  const second = await rotatePdf(new File([new Uint8Array(first.bytes)], "rotated.pdf"), -90);
+  const restored = await PDFDocument.load(second.bytes);
+  assert.deepEqual(restored.getPages().map((page) => page.getRotation().angle), [0, 0]);
 });

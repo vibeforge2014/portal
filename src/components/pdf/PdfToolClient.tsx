@@ -20,6 +20,7 @@ function formatBytes(bytes: number): string {
 function errorMessage(error: unknown, locale: PdfLocale): string {
   const copy = PDF_COPY[locale];
   if (error instanceof Error && error.message === "invalid-range") return copy.invalidRange;
+  if (error instanceof Error && error.message === "cannot-remove-all") return copy.cannotRemoveAll;
   if (error instanceof Error && error.message === "too-many-pages") return copy.tooManyPages;
   return copy.processError;
 }
@@ -33,6 +34,7 @@ export function PdfToolClient({ locale, tool }: { locale: PdfLocale; tool: PdfTo
   const [splitEach, setSplitEach] = useState(false);
   const [method, setMethod] = useState<CompressionMethod>("structure");
   const [quality, setQuality] = useState<RasterQuality>("balanced");
+  const [rotation, setRotation] = useState<90 | -90>(90);
   const [dragging, setDragging] = useState(false);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<string | null>(null);
@@ -73,7 +75,7 @@ export function PdfToolClient({ locale, tool }: { locale: PdfLocale; tool: PdfTo
         return { id: crypto.randomUUID(), file, pages };
       }));
       setFiles((current) => tool === "merge" ? [...current, ...inspected] : inspected);
-      if (tool === "split") setPageRange("");
+      if (tool === "split" || tool === "remove-pages" || tool === "extract-pages") setPageRange("");
     } catch (cause) {
       setError(cause instanceof Error && cause.message === "too-many-pages" ? copy.tooManyPages : copy.invalidPdf);
     } finally {
@@ -107,6 +109,14 @@ export function PdfToolClient({ locale, tool }: { locale: PdfLocale; tool: PdfTo
       } else if (tool === "split") {
         const pages = operations.parsePageRange(pageRange, files[0].pages);
         output = await operations.splitPdf(files[0].file, pages, splitEach, update);
+      } else if (tool === "remove-pages") {
+        const pages = operations.parsePageRange(pageRange, files[0].pages);
+        output = await operations.removePdfPages(files[0].file, pages, update);
+      } else if (tool === "extract-pages") {
+        const pages = operations.parsePageRange(pageRange, files[0].pages);
+        output = await operations.splitPdf(files[0].file, pages, false, update);
+      } else if (tool === "rotate") {
+        output = await operations.rotatePdf(files[0].file, rotation, update);
       } else {
         output = await operations.compressPdf(files[0].file, method, quality, update);
       }
@@ -195,14 +205,23 @@ export function PdfToolClient({ locale, tool }: { locale: PdfLocale; tool: PdfTo
           </div>
         ) : null}
 
-        {tool === "split" && files.length > 0 ? (
+        {(tool === "split" || tool === "remove-pages" || tool === "extract-pages") && files.length > 0 ? (
           <div className="pdf-options">
-            <label className="pdf-field-label" htmlFor="pdf-page-range">{copy.pageRange}</label>
+            <label className="pdf-field-label" htmlFor="pdf-page-range">{tool === "remove-pages" ? copy.pagesToRemove : tool === "extract-pages" ? copy.pagesToExtract : copy.pageRange}</label>
             <input id="pdf-page-range" className="pdf-range-input" type="text" value={pageRange} onChange={(event) => { setPageRange(event.target.value); clearResult(); }} placeholder="1-3,5,8" aria-describedby="pdf-range-hint" />
             <p id="pdf-range-hint" className="pdf-field-hint">{copy.pageRangeHint} {copy.pageCount(files[0].pages)}</p>
-            <fieldset className="pdf-choice-group"><legend>{copy.splitMode}</legend>
+            {tool === "split" ? <fieldset className="pdf-choice-group"><legend>{copy.splitMode}</legend>
               <label><input type="radio" name="split-mode" checked={!splitEach} onChange={() => { setSplitEach(false); clearResult(); }} /><span>{copy.extractTogether}</span></label>
               <label><input type="radio" name="split-mode" checked={splitEach} onChange={() => { setSplitEach(true); clearResult(); }} /><span>{copy.splitEach}</span></label>
+            </fieldset> : null}
+          </div>
+        ) : null}
+
+        {tool === "rotate" && files.length > 0 ? (
+          <div className="pdf-options">
+            <fieldset className="pdf-choice-group"><legend>{copy.rotation}</legend>
+              <label><input type="radio" name="rotation" checked={rotation === 90} onChange={() => { setRotation(90); clearResult(); }} /><span>{copy.clockwise}</span></label>
+              <label><input type="radio" name="rotation" checked={rotation === -90} onChange={() => { setRotation(-90); clearResult(); }} /><span>{copy.counterClockwise}</span></label>
             </fieldset>
           </div>
         ) : null}
