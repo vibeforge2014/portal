@@ -8,7 +8,7 @@
 .pdf-header-links a:hover { color:rgb(var(--fg)); background:rgb(var(--surface)); }
 .pdf-header-links .pdf-tool-dropdown summary { min-height:30px; padding:6px 15px; color:rgb(var(--accent)); }
 .pdf-header-links .pdf-tool-dropdown[open] summary { background:rgb(var(--surface)); }
-.pdf-site-nav .pdf-dropdown-panel { grid-template-columns:repeat(4,minmax(0,1fr)); }
+.pdf-site-nav .pdf-dropdown-panel { grid-template-columns:repeat(5,minmax(0,1fr)); gap:22px; }
 .pdf-mobile-menu { display:none; }
 .pdf-language-links { justify-self:end; display:flex; gap:2px; padding:3px; border:1px solid rgb(var(--line) / .1); border-radius:10px; }
 .pdf-language-links a { min-width:32px; height:30px; display:grid; place-items:center; border-radius:7px; color:rgb(var(--secondary)); font-size:11px; font-weight:700; }
@@ -72,6 +72,9 @@
 .pdf-option-label { margin-top:18px; }
 .pdf-inline-fields { display:flex; flex-wrap:wrap; gap:15px; }
 .pdf-inline-fields label { display:grid; gap:9px; color:rgb(var(--fg)); font-size:12px; font-weight:650; }
+.pdf-crop-fields { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; }
+.pdf-crop-fields label { display:grid; gap:7px; color:rgb(var(--secondary)); font-size:11px; }
+.pdf-crop-fields .pdf-number-input { width:100%; }
 .pdf-page-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(118px,1fr)); gap:10px; margin:0; padding:0; list-style:none; }
 .pdf-page-grid li { min-width:0; display:grid; gap:7px; padding:9px; border:1px solid rgb(var(--line) / .11); border-radius:10px; background:rgb(var(--bg) / .42); }
 .pdf-page-grid img { width:100%; height:138px; display:block; object-fit:contain; background:#fff; border:1px solid rgb(var(--line) / .1); }
@@ -148,6 +151,7 @@
   .pdf-file-list li { gap:8px; }
   .pdf-file-actions button { width:28px; }
   .pdf-page-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .pdf-crop-fields { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .pdf-work-actions { align-items:stretch; flex-direction:column; }
   .pdf-work-actions>span { display:none; }
   .pdf-action-button,.pdf-secondary-button { width:100%; }

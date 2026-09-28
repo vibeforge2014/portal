@@ -11,6 +11,7 @@ export type CompressionMethod = "structure" | "raster";
 export type RasterQuality = "balanced" | "smaller";
 export type JpgQuality = "balanced" | "high";
 export type PageNumberPosition = "bottom-center" | "bottom-right" | "top-right";
+export type CropMargins = { top: number; right: number; bottom: number; left: number };
 
 function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality?: number): Promise<Blob> {
   return new Promise((resolve, reject) => {
@@ -206,6 +207,11 @@ export async function imagesToPdf(files: File[], onProgress?: (done: number, tot
   return { bytes: await output.save({ useObjectStreams: true }), filename: "images.pdf" };
 }
 
+export async function scanImagesToPdf(files: File[], onProgress?: (done: number, total: number) => void): Promise<PdfResult> {
+  const result = await imagesToPdf(files, onProgress);
+  return { ...result, filename: "scanned-pages.pdf" };
+}
+
 export async function pdfToJpg(file: File, quality: JpgQuality, onProgress?: (done: number, total: number) => void): Promise<PdfResult> {
   const loading = await loadPdfForRendering(new Uint8Array(await file.arrayBuffer()));
   try {
@@ -238,6 +244,120 @@ export async function pdfToJpg(file: File, quality: JpgQuality, onProgress?: (do
   } finally {
     await loading.destroy();
   }
+}
+
+export async function pdfToPng(file: File, quality: JpgQuality, onProgress?: (done: number, total: number) => void): Promise<PdfResult> {
+  const loading = await loadPdfForRendering(new Uint8Array(await file.arrayBuffer()));
+  try {
+    const source = await loading.promise;
+    if (source.numPages > MAX_RASTER_PAGES) throw new Error("too-many-pages");
+    const entries: Record<string, Uint8Array> = {};
+    const scale = quality === "high" ? 2 : 1.45;
+    for (let index = 1; index <= source.numPages; index += 1) {
+      const page = await source.getPage(index);
+      const natural = page.getViewport({ scale: 1 });
+      const maxScale = Math.sqrt(5_000_000 / (natural.width * natural.height));
+      const viewport = page.getViewport({ scale: Math.min(scale, maxScale) });
+      const canvas = window.document.createElement("canvas");
+      canvas.width = Math.max(1, Math.floor(viewport.width));
+      canvas.height = Math.max(1, Math.floor(viewport.height));
+      const context = canvas.getContext("2d", { alpha: false });
+      if (!context) throw new Error("canvas-unavailable");
+      context.fillStyle = "#ffffff";
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      await page.render({ canvas, canvasContext: context, viewport }).promise;
+      entries[`page-${String(index).padStart(3, "0")}.png`] = new Uint8Array(await (await canvasToBlob(canvas, "image/png")).arrayBuffer());
+      canvas.width = 0;
+      canvas.height = 0;
+      page.cleanup();
+      onProgress?.(index, source.numPages);
+    }
+    const { zipSync } = await import("fflate");
+    return { bytes: zipSync(entries, { level: 0 }), filename: "pdf-pages-png.zip" };
+  } finally {
+    await loading.destroy();
+  }
+}
+
+async function extractTextPages(file: File, onProgress?: (done: number, total: number) => void): Promise<string[]> {
+  const loading = await loadPdfForRendering(new Uint8Array(await file.arrayBuffer()));
+  try {
+    const source = await loading.promise;
+    const pages: string[] = [];
+    for (let index = 1; index <= source.numPages; index += 1) {
+      const page = await source.getPage(index);
+      const content = await page.getTextContent();
+      const text = content.items
+        .map((item) => "str" in item ? item.str : "")
+        .join(" ")
+        .replace(/\s+/g, " ")
+        .trim();
+      pages.push(text);
+      page.cleanup();
+      onProgress?.(index, source.numPages);
+    }
+    return pages;
+  } finally {
+    await loading.destroy();
+  }
+}
+
+export async function pdfToText(file: File, onProgress?: (done: number, total: number) => void): Promise<PdfResult> {
+  const pages = await extractTextPages(file, onProgress);
+  const text = pages.map((page, index) => `--- Page ${index + 1} ---\n${page}`).join("\n\n");
+  return { bytes: new TextEncoder().encode(text), filename: "extracted-text.txt" };
+}
+
+export async function comparePdfText(first: File, second: File, onProgress?: (done: number, total: number) => void): Promise<PdfResult> {
+  const firstPages = await extractTextPages(first, (done, total) => onProgress?.(done, total * 2));
+  const secondPages = await extractTextPages(second, (done) => onProgress?.(firstPages.length + done, firstPages.length + Math.max(firstPages.length, done)));
+  const pageCount = Math.max(firstPages.length, secondPages.length);
+  const changed: number[] = [];
+  for (let index = 0; index < pageCount; index += 1) {
+    if ((firstPages[index] ?? "") !== (secondPages[index] ?? "")) changed.push(index);
+  }
+  const details = changed.slice(0, 20).map((index) => [
+    `=== Page ${index + 1} ===`,
+    `A: ${(firstPages[index] ?? "[missing page]").slice(0, 1200)}`,
+    `B: ${(secondPages[index] ?? "[missing page]").slice(0, 1200)}`,
+  ].join("\n")).join("\n\n");
+  const report = [
+    "PDF text comparison",
+    `File A: ${first.name}`,
+    `File B: ${second.name}`,
+    `Pages: ${firstPages.length} / ${secondPages.length}`,
+    `Different pages: ${changed.length ? changed.map((page) => page + 1).join(", ") : "none"}`,
+    changed.length > 20 ? `Detailed excerpts are limited to the first 20 of ${changed.length} changed pages.` : "",
+    details,
+  ].filter(Boolean).join("\n\n");
+  return { bytes: new TextEncoder().encode(report), filename: "pdf-comparison.txt" };
+}
+
+export async function repairPdf(file: File, onProgress?: (done: number, total: number) => void): Promise<PdfResult> {
+  const source = await PDFDocument.load(await file.arrayBuffer(), { updateMetadata: false });
+  const output = await PDFDocument.create();
+  const pages = await output.copyPages(source, source.getPageIndices());
+  pages.forEach((page, index) => {
+    output.addPage(page);
+    onProgress?.(index + 1, pages.length);
+  });
+  return { bytes: await output.save({ useObjectStreams: true }), filename: "repaired.pdf" };
+}
+
+export async function cropPdf(file: File, margins: CropMargins, onProgress?: (done: number, total: number) => void): Promise<PdfResult> {
+  const document = await PDFDocument.load(await file.arrayBuffer());
+  const pages = document.getPages();
+  pages.forEach((page, index) => {
+    const { width, height } = page.getSize();
+    const left = Math.max(0, margins.left);
+    const right = Math.max(0, margins.right);
+    const top = Math.max(0, margins.top);
+    const bottom = Math.max(0, margins.bottom);
+    if (left + right >= width - 10 || top + bottom >= height - 10) throw new Error("invalid-crop");
+    page.setCropBox(left, bottom, width - left - right, height - top - bottom);
+    onProgress?.(index + 1, pages.length);
+  });
+  return { bytes: await document.save({ useObjectStreams: true }), filename: "cropped.pdf" };
 }
 
 export async function addPageNumbers(
