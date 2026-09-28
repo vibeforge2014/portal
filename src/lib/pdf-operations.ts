@@ -1,4 +1,4 @@
-import { PDFDocument } from "pdf-lib";
+import { PDFDocument, degrees } from "pdf-lib";
 
 export const MAX_FILE_BYTES = 40 * 1024 * 1024;
 export const MAX_TOTAL_BYTES = 100 * 1024 * 1024;
@@ -102,6 +102,29 @@ export async function splitPdf(file: File, pageNumbers: number[], eachPage: bool
   }
   const { zipSync } = await import("fflate");
   return { bytes: zipSync(entries, { level: 0 }), filename: "split-pages.zip" };
+}
+
+export async function removePdfPages(file: File, pageNumbers: number[], onProgress?: (done: number, total: number) => void): Promise<PdfResult> {
+  const document = await PDFDocument.load(await file.arrayBuffer());
+  const count = document.getPageCount();
+  if (pageNumbers.length === 0 || pageNumbers.some((page) => page < 0 || page >= count)) throw new Error("invalid-range");
+  const toRemove = [...new Set(pageNumbers)].sort((a, b) => b - a);
+  if (toRemove.length >= count) throw new Error("cannot-remove-all");
+  toRemove.forEach((page, index) => {
+    document.removePage(page);
+    onProgress?.(index + 1, toRemove.length);
+  });
+  return { bytes: await document.save({ useObjectStreams: true }), filename: "pages-removed.pdf" };
+}
+
+export async function rotatePdf(file: File, direction: 90 | -90, onProgress?: (done: number, total: number) => void): Promise<PdfResult> {
+  const document = await PDFDocument.load(await file.arrayBuffer());
+  const pages = document.getPages();
+  pages.forEach((page, index) => {
+    page.setRotation(degrees((page.getRotation().angle + direction + 360) % 360));
+    onProgress?.(index + 1, pages.length);
+  });
+  return { bytes: await document.save({ useObjectStreams: true }), filename: "rotated.pdf" };
 }
 
 export async function compressPdf(

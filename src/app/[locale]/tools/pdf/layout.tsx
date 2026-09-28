@@ -25,7 +25,7 @@ export default async function PdfLayout({ children, params }: { children: React.
             <strong>{copy.brandName}</strong>
           </a>
           <div className="pdf-header-links">
-            {PDF_TOOLS.map((tool) => <a key={tool} href={pdfUrl(locale, tool)}>{copy.toolsCopy[tool].title}</a>)}
+            {(["merge", "split", "compress"] as const).map((tool) => <a key={tool} href={pdfUrl(locale, tool)}>{copy.toolsCopy[tool].title}</a>)}
             <PdfToolDropdown locale={locale} />
           </div>
           <div className="pdf-mobile-menu"><PdfToolDropdown locale={locale} compact /></div>

@@ -4,15 +4,16 @@ import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { PDF_COPY, pdfUrl, type PdfLocale, type PdfTool } from "@/lib/pdf-tools";
 
-const GROUPS: { key: "organize" | "optimize"; tools: PdfTool[] }[] = [
-  { key: "organize", tools: ["merge", "split"] },
+const GROUPS: { key: "organize" | "optimize" | "edit"; tools: PdfTool[] }[] = [
+  { key: "organize", tools: ["merge", "split", "remove-pages", "extract-pages"] },
   { key: "optimize", tools: ["compress"] },
+  { key: "edit", tools: ["rotate"] },
 ];
 
 const GROUP_LABELS: Record<PdfLocale, Record<(typeof GROUPS)[number]["key"], string>> = {
-  "zh-hans": { organize: "整理 PDF", optimize: "优化 PDF" },
-  "zh-hant": { organize: "整理 PDF", optimize: "最佳化 PDF" },
-  en: { organize: "Organize PDF", optimize: "Optimize PDF" },
+  "zh-hans": { organize: "整理 PDF", optimize: "优化 PDF", edit: "编辑 PDF" },
+  "zh-hant": { organize: "整理 PDF", optimize: "最佳化 PDF", edit: "編輯 PDF" },
+  en: { organize: "Organize PDF", optimize: "Optimize PDF", edit: "Edit PDF" },
 };
 
 export function PdfToolDropdown({ locale, compact = false }: { locale: PdfLocale; compact?: boolean }) {
@@ -51,7 +52,7 @@ export function PdfToolDropdown({ locale, compact = false }: { locale: PdfLocale
               {group.tools.map((tool) => (
                 <li key={tool}>
                   <a href={pdfUrl(locale, tool)} aria-current={pathname === pdfUrl(locale, tool) ? "page" : undefined}>
-                    <span className={`pdf-dropdown-icon pdf-dropdown-icon--${tool}`} aria-hidden>{tool === "merge" ? "⇄" : tool === "split" ? "✂" : "↘"}</span>
+                    <span className={`pdf-dropdown-icon pdf-dropdown-icon--${tool}`} aria-hidden>{tool === "merge" ? "⇄" : tool === "split" ? "✂" : tool === "compress" ? "↘" : tool === "rotate" ? "↻" : tool === "remove-pages" ? "×" : "▤"}</span>
                     <span>{copy.toolsCopy[tool].title}</span>
                   </a>
                 </li>

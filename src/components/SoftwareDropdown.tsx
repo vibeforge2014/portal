@@ -9,7 +9,7 @@ import { AppIcon } from "@/components/AppIcon";
 import { useLanguage } from "@/components/LanguageProvider";
 import { PDF_COPY, PDF_TOOLS, pdfUrl, type PdfLocale, type PdfTool } from "@/lib/pdf-tools";
 
-const TOOL_GLYPHS: Record<PdfTool, string> = { merge: "⇄", split: "✂", compress: "↘" };
+const TOOL_GLYPHS: Record<PdfTool, string> = { merge: "⇄", split: "✂", "remove-pages": "×", "extract-pages": "▤", compress: "↘", rotate: "↻" };
 
 export function SoftwareDropdown({ compact = false }: { compact?: boolean }) {
   const detailsRef = useRef<HTMLDetailsElement>(null);
