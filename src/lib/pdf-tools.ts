@@ -1,8 +1,18 @@
 export const PDF_LOCALES = ["zh-hans", "zh-hant", "en"] as const;
-export const PDF_TOOLS = ["merge", "split", "remove-pages", "extract-pages", "compress", "rotate"] as const;
+export const PDF_TOOLS = [
+  "merge", "split", "remove-pages", "extract-pages", "organize",
+  "compress", "jpg-to-pdf", "pdf-to-jpg", "rotate", "page-numbers", "watermark",
+] as const;
+
+export const CORE_PDF_TOOLS = ["merge", "split", "remove-pages", "extract-pages", "compress", "rotate"] as const;
 
 export type PdfLocale = (typeof PDF_LOCALES)[number];
 export type PdfTool = (typeof PDF_TOOLS)[number];
+export type CorePdfTool = (typeof CORE_PDF_TOOLS)[number];
+
+export function isCorePdfTool(tool: PdfTool): tool is CorePdfTool {
+  return CORE_PDF_TOOLS.includes(tool as CorePdfTool);
+}
 
 export function isPdfLocale(value: string): value is PdfLocale {
   return PDF_LOCALES.includes(value as PdfLocale);
@@ -75,7 +85,7 @@ type PdfCopy = {
   balanced: string;
   smaller: string;
   rasterWarning: string;
-  start: Record<PdfTool, string>;
+  start: Record<CorePdfTool, string>;
   processing: string;
   progress: (done: number, total: number) => string;
   download: string;
@@ -128,8 +138,13 @@ export const PDF_COPY: Record<PdfLocale, PdfCopy> = {
       split: { title: "拆分 PDF", description: "按页码提取需要的页面，或将每页分别保存。", detail: "输入页码范围，例如 1-3,5。可把选中的页面合成一份 PDF，也可将每页装入 ZIP。", steps: ["选择一份 PDF", "填写要保留的页码", "选择输出方式并下载"], limitation: "加密文件暂不支持。拆页会重新生成文件，书签和交互式表单可能无法完整保留。" },
       "remove-pages": { title: "移除 PDF 页面", description: "删掉不需要的页面，保留其余内容。", detail: "输入要移除的页码或范围，例如 2,4-6。至少保留一页。", steps: ["选择一份 PDF", "输入要移除的页码", "下载整理后的文件"], limitation: "移除的页面不会出现在新文件中。请在下载后核对页数与内容。" },
       "extract-pages": { title: "提取 PDF 页面", description: "把选定页面另存为一份 PDF。", detail: "输入要提取的页码或范围，新文件会按原页序排列。", steps: ["选择一份 PDF", "输入要提取的页码", "下载提取结果"], limitation: "书签和交互式表单可能无法完整保留。请检查结果。" },
+      organize: { title: "整理 PDF 页面", description: "预览并调整页面顺序，再导出新的 PDF。", detail: "页面会以缩略图显示。用左右按钮调整顺序，确认后生成一份新文件。", steps: ["选择一份 PDF", "预览并调整页面顺序", "下载整理后的文件"], limitation: "单次最多处理 60 页。书签、附件和交互式表单可能无法完整保留。" },
       compress: { title: "压缩 PDF", description: "比较处理前后的大小，选择适合文件内容的方式。", detail: "先尝试保留文字的结构整理；扫描件可选择重绘页面来缩小体积，并在下载前确认结果。", steps: ["选择一份 PDF", "选择处理方式与质量", "比较大小并检查下载结果"], limitation: "压缩效果取决于原文件。扫描页重绘会失去可选文字、链接和表单，不保证达到指定大小。" },
+      "jpg-to-pdf": { title: "JPG 转 PDF", description: "把多张 JPG 或 PNG 图片按顺序合成 PDF。", detail: "添加图片并调整顺序。每张图片会在保留比例的情况下放进独立页面。", steps: ["添加 JPG 或 PNG 图片", "调整图片顺序", "生成并下载 PDF"], limitation: "图片不会上传。超大图片会缩放到页面范围内，透明 PNG 会保留透明区域。" },
+      "pdf-to-jpg": { title: "PDF 转 JPG", description: "把 PDF 的每一页转换成 JPG 图片并打包下载。", detail: "选择清晰度后开始转换。所有页面会保存为编号 JPG，并放入一个 ZIP 文件。", steps: ["选择一份 PDF", "选择图片清晰度", "下载包含所有 JPG 的 ZIP"], limitation: "单次最多转换 40 页。转换后的图片不包含可选文字、链接或表单。" },
       rotate: { title: "旋转 PDF", description: "将所有页面顺时针或逆时针旋转 90°。", detail: "选择旋转方向，处理后下载新的 PDF。", steps: ["选择一份 PDF", "选择旋转方向", "下载旋转后的文件"], limitation: "此工具会旋转所有页面。建议下载后检查页面方向。" },
+      "page-numbers": { title: "添加 PDF 页码", description: "为每一页添加连续页码，并选择显示位置。", detail: "设置起始数字和页码位置。页码会直接写入每一页的边距区域。", steps: ["选择一份 PDF", "设置位置和起始数字", "下载带页码的文件"], limitation: "页码使用标准数字字体。建议下载后检查是否与原页面内容重叠。" },
+      watermark: { title: "PDF 加水印", description: "在 PDF 的每一页添加自定义文字水印。", detail: "输入中英文水印文字并选择透明度，工具会把倾斜水印放在每页中央。", steps: ["选择一份 PDF", "输入水印文字并设置透明度", "下载加水印的文件"], limitation: "水印会嵌入页面内容。请确认文字、透明度和页面可读性后再使用。" },
     },
   },
   "zh-hant": {
@@ -158,8 +173,13 @@ export const PDF_COPY: Record<PdfLocale, PdfCopy> = {
       split: { title: "分割 PDF", description: "依頁碼擷取需要的頁面，或將每頁分別儲存。", detail: "輸入頁碼範圍，例如 1-3,5。可將選取頁面合成一份 PDF，也能把每頁收進 ZIP。", steps: ["選擇一份 PDF", "填入要保留的頁碼", "選擇輸出方式並下載"], limitation: "暫不支援加密檔案。分割會重新產生檔案，書籤與互動式表單可能無法完整保留。" },
       "remove-pages": { title: "移除 PDF 頁面", description: "刪除不需要的頁面，保留其他內容。", detail: "輸入要移除的頁碼或範圍，例如 2,4-6。至少保留一頁。", steps: ["選擇一份 PDF", "輸入要移除的頁碼", "下載整理後的檔案"], limitation: "移除的頁面不會出現在新檔案中。請下載後核對頁數與內容。" },
       "extract-pages": { title: "擷取 PDF 頁面", description: "將選取頁面另存為一份 PDF。", detail: "輸入要擷取的頁碼或範圍，新檔案會依原頁序排列。", steps: ["選擇一份 PDF", "輸入要擷取的頁碼", "下載擷取結果"], limitation: "書籤與互動式表單可能無法完整保留，請檢查結果。" },
+      organize: { title: "整理 PDF 頁面", description: "預覽並調整頁面順序，再匯出新的 PDF。", detail: "頁面會以縮圖顯示。用左右按鈕調整順序，確認後產生新檔案。", steps: ["選擇一份 PDF", "預覽並調整頁面順序", "下載整理後的檔案"], limitation: "單次最多處理 60 頁。書籤、附件與互動式表單可能無法完整保留。" },
       compress: { title: "壓縮 PDF", description: "比較處理前後的大小，選擇適合檔案內容的方式。", detail: "先嘗試保留文字的結構整理；掃描檔可選擇重新繪製頁面縮小體積，並在下載後確認結果。", steps: ["選擇一份 PDF", "選擇處理方式與品質", "比較大小並檢查下載結果"], limitation: "壓縮效果取決於原始檔案。掃描頁重新繪製會失去可選取文字、連結和表單，不保證達到指定大小。" },
+      "jpg-to-pdf": { title: "JPG 轉 PDF", description: "把多張 JPG 或 PNG 圖片依序合成 PDF。", detail: "加入圖片並調整順序。每張圖片會保留比例並放入獨立頁面。", steps: ["加入 JPG 或 PNG 圖片", "調整圖片順序", "產生並下載 PDF"], limitation: "圖片不會上傳。超大圖片會縮放到頁面範圍內，透明 PNG 會保留透明區域。" },
+      "pdf-to-jpg": { title: "PDF 轉 JPG", description: "將 PDF 的每一頁轉成 JPG 圖片並打包下載。", detail: "選擇清晰度後開始轉換。所有頁面會儲存為編號 JPG，並放入一個 ZIP 檔案。", steps: ["選擇一份 PDF", "選擇圖片清晰度", "下載包含所有 JPG 的 ZIP"], limitation: "單次最多轉換 40 頁。轉換後的圖片不包含可選取文字、連結或表單。" },
       rotate: { title: "旋轉 PDF", description: "將所有頁面順時針或逆時針旋轉 90°。", detail: "選擇旋轉方向，處理後下載新的 PDF。", steps: ["選擇一份 PDF", "選擇旋轉方向", "下載旋轉後的檔案"], limitation: "此工具會旋轉所有頁面。建議下載後檢查頁面方向。" },
+      "page-numbers": { title: "加入 PDF 頁碼", description: "為每一頁加入連續頁碼，並選擇顯示位置。", detail: "設定起始數字和頁碼位置。頁碼會直接寫入每一頁的邊距區域。", steps: ["選擇一份 PDF", "設定位置和起始數字", "下載帶頁碼的檔案"], limitation: "頁碼使用標準數字字型。建議下載後檢查是否與原頁面內容重疊。" },
+      watermark: { title: "PDF 加浮水印", description: "在 PDF 的每一頁加入自訂文字浮水印。", detail: "輸入中英文浮水印文字並選擇透明度，工具會把傾斜浮水印放在每頁中央。", steps: ["選擇一份 PDF", "輸入浮水印文字並設定透明度", "下載加浮水印的檔案"], limitation: "浮水印會嵌入頁面內容。請確認文字、透明度及頁面可讀性後再使用。" },
     },
   },
   en: {
@@ -189,8 +209,13 @@ export const PDF_COPY: Record<PdfLocale, PdfCopy> = {
       split: { title: "Split PDF", description: "Extract the pages you need or save pages separately.", detail: "Enter a range such as 1-3,5. Keep selected pages in one PDF or download each page in a ZIP.", steps: ["Choose a PDF", "Enter the pages to keep", "Choose an output and download"], limitation: "Encrypted files are not supported. Splitting recreates the document, so bookmarks and interactive forms may not be fully preserved." },
       "remove-pages": { title: "Remove PDF pages", description: "Delete unwanted pages and keep the rest.", detail: "Enter page numbers or ranges to remove, such as 2,4-6. At least one page must remain.", steps: ["Choose a PDF", "Enter pages to remove", "Download the updated file"], limitation: "Removed pages are absent from the new file. Check the page count and content after downloading." },
       "extract-pages": { title: "Extract PDF pages", description: "Save selected pages as a separate PDF.", detail: "Enter page numbers or ranges to extract. Pages remain in their original order.", steps: ["Choose a PDF", "Enter pages to extract", "Download the result"], limitation: "Bookmarks and interactive forms may not survive extraction. Check the result." },
+      organize: { title: "Organize PDF pages", description: "Preview and rearrange pages before exporting a new PDF.", detail: "Pages appear as thumbnails. Use the arrow controls to change their order, then create a new file.", steps: ["Choose a PDF", "Preview and rearrange pages", "Download the organized file"], limitation: "Up to 60 pages per file. Bookmarks, attachments, and interactive forms may not be fully preserved." },
       compress: { title: "Compress PDF", description: "Compare file size before and after choosing a method.", detail: "Try structure optimization to keep text. For scanned documents, render pages to reduce size, then check the result.", steps: ["Choose a PDF", "Select a method and quality", "Compare sizes and inspect the download"], limitation: "Results depend on the source file. Rendering scans removes selectable text, links, and forms, and cannot guarantee a target size." },
+      "jpg-to-pdf": { title: "JPG to PDF", description: "Combine JPG or PNG images into one PDF in your chosen order.", detail: "Add images and arrange them. Each image is placed on its own page while keeping its proportions.", steps: ["Add JPG or PNG images", "Arrange the images", "Create and download the PDF"], limitation: "Images stay on your device. Large images are scaled to fit the page, and transparent PNG areas remain transparent." },
+      "pdf-to-jpg": { title: "PDF to JPG", description: "Convert every PDF page to a JPG image and download them together.", detail: "Choose an image quality and start. Numbered JPG files are placed in a single ZIP download.", steps: ["Choose a PDF", "Select image quality", "Download the ZIP of JPG files"], limitation: "Up to 40 pages per file. Images do not retain selectable text, links, or forms." },
       rotate: { title: "Rotate PDF", description: "Turn every page 90° clockwise or counterclockwise.", detail: "Choose the direction, then download a new PDF.", steps: ["Choose a PDF", "Choose the direction", "Download the rotated file"], limitation: "This tool rotates every page. Check the page orientation after downloading." },
+      "page-numbers": { title: "Add PDF page numbers", description: "Add consecutive page numbers and choose where they appear.", detail: "Set the starting number and position. Numbers are written directly into the margin of every page.", steps: ["Choose a PDF", "Set the position and starting number", "Download the numbered file"], limitation: "Page numbers use a standard numeric font. Check that they do not overlap the original page content." },
+      watermark: { title: "Watermark PDF", description: "Add a custom text watermark to every PDF page.", detail: "Enter watermark text and choose its opacity. A diagonal watermark is placed across the center of each page.", steps: ["Choose a PDF", "Enter text and set opacity", "Download the watermarked file"], limitation: "The watermark becomes part of the page. Check its text, opacity, and readability before using the file." },
     },
   },
 };

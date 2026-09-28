@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { unzipSync } from "fflate";
 import { PDFDocument } from "pdf-lib";
-import { compressPdf, mergePdfs, parsePageRange, removePdfPages, rotatePdf, splitPdf } from "../src/lib/pdf-operations";
+import { addPageNumbers, compressPdf, imagesToPdf, mergePdfs, parsePageRange, removePdfPages, reorderPdf, rotatePdf, splitPdf } from "../src/lib/pdf-operations";
 
 async function sampleFile(name: string, pageWidths: number[]): Promise<File> {
   const pdf = await PDFDocument.create();
@@ -59,4 +59,29 @@ test("rotates each page relative to its current orientation", async () => {
   const second = await rotatePdf(new File([new Uint8Array(first.bytes)], "rotated.pdf"), -90);
   const restored = await PDFDocument.load(second.bytes);
   assert.deepEqual(restored.getPages().map((page) => page.getRotation().angle), [0, 0]);
+});
+
+test("reorders every page using an exact permutation", async () => {
+  const source = await sampleFile("source.pdf", [101, 202, 303]);
+  const result = await reorderPdf(source, [2, 0, 1]);
+  const organized = await PDFDocument.load(result.bytes);
+  assert.deepEqual(organized.getPages().map((page) => page.getWidth()), [303, 101, 202]);
+  await assert.rejects(reorderPdf(source, [0, 0, 1]), /invalid-order/);
+});
+
+test("creates one PDF page per input image", async () => {
+  const png = Uint8Array.from(Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64"));
+  const first = new File([png], "first.png", { type: "image/png" });
+  const second = new File([png], "second.png", { type: "image/png" });
+  const result = await imagesToPdf([first, second]);
+  assert.equal(result.filename, "images.pdf");
+  assert.equal((await PDFDocument.load(result.bytes)).getPageCount(), 2);
+});
+
+test("adds consecutive page numbers without changing the page count", async () => {
+  const source = await sampleFile("source.pdf", [101, 102, 103]);
+  const result = await addPageNumbers(source, "bottom-right", 7);
+  assert.equal(result.filename, "numbered.pdf");
+  assert.equal((await PDFDocument.load(result.bytes)).getPageCount(), 3);
+  assert.ok(result.bytes.byteLength > source.size);
 });

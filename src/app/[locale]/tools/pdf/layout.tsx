@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { PdfLanguageLinks } from "@/components/pdf/PdfLanguageLinks";
 import { PdfToolDropdown } from "@/components/pdf/PdfToolDropdown";
-import { PDF_COPY, PDF_LOCALES, PDF_TOOLS, isPdfLocale, pdfUrl } from "@/lib/pdf-tools";
+import { PDF_COPY, PDF_LOCALES, isPdfLocale, pdfUrl } from "@/lib/pdf-tools";
 import "./tools.css";
 
 export const revalidate = 60;
@@ -33,7 +33,7 @@ export default async function PdfLayout({ children, params }: { children: React.
         </nav>
       </header>
       {children}
-      <footer className="pdf-site-footer"><a href={pdfUrl(locale, "merge")} className="pdf-footer-brand">{copy.brandName}</a><p>{copy.footer}</p><div className="pdf-footer-tools">{PDF_TOOLS.map((tool) => <a key={tool} href={pdfUrl(locale, tool)}>{copy.toolsCopy[tool].title}</a>)}</div></footer>
+      <footer className="pdf-site-footer"><a href={pdfUrl(locale, "merge")} className="pdf-footer-brand">{copy.brandName}</a><p>{copy.footer}</p><div className="pdf-footer-tools">{(["merge", "split", "compress"] as const).map((tool) => <a key={tool} href={pdfUrl(locale, tool)}>{copy.toolsCopy[tool].title}</a>)}</div></footer>
     </div>
   );
 }

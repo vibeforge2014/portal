@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { PDF_COPY, type PdfLocale, type PdfTool } from "@/lib/pdf-tools";
+import { PDF_COPY, type CorePdfTool, type PdfLocale } from "@/lib/pdf-tools";
 import type { CompressionMethod, RasterQuality } from "@/lib/pdf-operations";
 
 type SelectedFile = { id: string; file: File; pages: number };
@@ -25,7 +25,7 @@ function errorMessage(error: unknown, locale: PdfLocale): string {
   return copy.processError;
 }
 
-export function PdfToolClient({ locale, tool }: { locale: PdfLocale; tool: PdfTool }) {
+export function PdfToolClient({ locale, tool }: { locale: PdfLocale; tool: CorePdfTool }) {
   const copy = PDF_COPY[locale];
   const inputRef = useRef<HTMLInputElement>(null);
   const resultUrlRef = useRef<string | null>(null);
