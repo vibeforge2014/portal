@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { PdfLanguageLinks } from "@/components/pdf/PdfLanguageLinks";
-import { PDF_COPY, PDF_LOCALES, isPdfLocale, pdfUrl } from "@/lib/pdf-tools";
+import { PdfToolDropdown } from "@/components/pdf/PdfToolDropdown";
+import { PDF_COPY, PDF_LOCALES, PDF_TOOLS, isPdfLocale, pdfUrl } from "@/lib/pdf-tools";
 import "./tools.css";
 
 export const revalidate = 60;
@@ -23,12 +24,16 @@ export default async function PdfLayout({ children, params }: { children: React.
             <span className="pdf-brand-icon" aria-hidden>PDF</span>
             <strong>{copy.brandName}</strong>
           </a>
-          <div className="pdf-header-links"><a href="/#products">{copy.apps}</a><a href={pdfUrl(locale)} aria-current="page">{copy.tools}</a></div>
+          <div className="pdf-header-links">
+            {PDF_TOOLS.map((tool) => <a key={tool} href={pdfUrl(locale, tool)}>{copy.toolsCopy[tool].title}</a>)}
+            <PdfToolDropdown locale={locale} />
+          </div>
+          <div className="pdf-mobile-menu"><PdfToolDropdown locale={locale} compact /></div>
           <PdfLanguageLinks locale={locale} />
         </nav>
       </header>
       {children}
-      <footer className="pdf-site-footer"><a href={pdfUrl(locale)} className="pdf-footer-brand">{copy.brandName}</a><p>{copy.footer}</p><a href={pdfUrl(locale)}>{copy.allTools}</a></footer>
+      <footer className="pdf-site-footer"><a href={pdfUrl(locale, "merge")} className="pdf-footer-brand">{copy.brandName}</a><p>{copy.footer}</p><div className="pdf-footer-tools">{PDF_TOOLS.map((tool) => <a key={tool} href={pdfUrl(locale, tool)}>{copy.toolsCopy[tool].title}</a>)}</div></footer>
     </div>
   );
 }
