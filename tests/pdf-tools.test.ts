@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { unzipSync } from "fflate";
 import { PDFDocument } from "pdf-lib";
-import { addPageNumbers, compressPdf, imagesToPdf, mergePdfs, parsePageRange, removePdfPages, reorderPdf, rotatePdf, splitPdf } from "../src/lib/pdf-operations";
+import { addPageNumbers, compressPdf, cropPdf, imagesToPdf, mergePdfs, parsePageRange, removePdfPages, reorderPdf, repairPdf, rotatePdf, scanImagesToPdf, splitPdf } from "../src/lib/pdf-operations";
 
 async function sampleFile(name: string, pageWidths: number[]): Promise<File> {
   const pdf = await PDFDocument.create();
@@ -84,4 +84,27 @@ test("adds consecutive page numbers without changing the page count", async () =
   assert.equal(result.filename, "numbered.pdf");
   assert.equal((await PDFDocument.load(result.bytes)).getPageCount(), 3);
   assert.ok(result.bytes.byteLength > source.size);
+});
+
+test("crops every page with independent edge margins", async () => {
+  const source = await sampleFile("source.pdf", [300, 400]);
+  const result = await cropPdf(source, { top: 20, right: 30, bottom: 40, left: 10 });
+  const cropped = await PDFDocument.load(result.bytes);
+  assert.deepEqual(cropped.getPages().map((page) => {
+    const box = page.getCropBox();
+    return [box.x, box.y, box.width, box.height];
+  }), [[10, 40, 260, 240], [10, 40, 360, 240]]);
+  await assert.rejects(cropPdf(source, { top: 160, right: 0, bottom: 160, left: 0 }), /invalid-crop/);
+});
+
+test("rebuilds PDFs and names camera-image output for scanning", async () => {
+  const source = await sampleFile("source.pdf", [101, 202]);
+  const repaired = await repairPdf(source);
+  assert.equal(repaired.filename, "repaired.pdf");
+  assert.deepEqual((await PDFDocument.load(repaired.bytes)).getPages().map((page) => page.getWidth()), [101, 202]);
+
+  const png = Uint8Array.from(Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64"));
+  const scanned = await scanImagesToPdf([new File([png], "scan.png", { type: "image/png" })]);
+  assert.equal(scanned.filename, "scanned-pages.pdf");
+  assert.equal((await PDFDocument.load(scanned.bytes)).getPageCount(), 1);
 });
