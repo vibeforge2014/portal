@@ -1,4 +1,4 @@
-import { COMPANY_COPY_DEFAULTS, type SiteContent } from "@/lib/content-schema";
+import { V3_SEO_DEFAULTS, type SiteContent } from "@/lib/content-schema";
 
 export type PresetAsset = {
   id: string;
@@ -31,43 +31,41 @@ export const PRESET_ASSETS: PresetAsset[] = [
 ];
 
 export const DEFAULT_CONTENT: SiteContent = {
-  schemaVersion: 2,
+  schemaVersion: 3,
   brand: { name: "ZenSoft", activeLogoId: "builtin-grid" },
   navigation: { githubUrl: "https://github.com/vibeforge2014" },
   copy: {
     zh: {
-      navLabel: "主导航", homeLabel: "ZenSoft 首页", apps: "应用", principles: "理念", language: "EN", languageLabel: "Switch to English",
-      studio: "绍兴市臻书科技有限公司", headlinePlain: "专注 Apple 平台，打造", headlineAccent: "清晰、可靠的原生应用。",
-      heroDescription: "ZenSoft 面向 macOS、iOS 与 Apple TV 提供原生应用，关注实际使用场景、产品稳定性与数据隐私。",
-      browseApps: "查看产品", about: "公司介绍", overviewLabel: "产品概览", onSale: "款已发布产品", nativeApps: "款原生应用", tracking: "第三方行为追踪",
-      toolkit: "面向日常场景的\n原生应用产品组合。", productMatrix: "产品与服务", productTitle: "覆盖效率、设备管理与\n数字娱乐等使用场景。",
-      productIntro: "各产品围绕明确需求独立设计，并针对 Apple 平台的交互方式与系统能力进行适配。",
-      ...COMPANY_COPY_DEFAULTS.zh,
-      principleLabel: "产品原则", principleTitle: "以明确的标准持续完善产品。",
-      principleDescription: "我们在产品设计与开发过程中，优先考虑平台一致性、数据隐私和长期可维护性，并通过持续迭代改善使用体验。",
-      principlesList: [
-        { title: "原生开发", description: "根据各平台的交互规范与系统能力进行设计和实现。" },
-        { title: "隐私保护", description: "在功能允许的范围内优先采用设备端处理，并减少非必要的数据收集。" },
-        { title: "克制设计", description: "围绕核心需求组织功能与界面，减少不必要的操作和干扰。" },
+      navLabel: "主导航", homeLabel: "ZenSoft 首页", productsLabel: "软件产品", appsGroupLabel: "原生应用", toolsGroupLabel: "在线工具",
+      companyLabel: "公司介绍", language: "EN", languageLabel: "Switch to English",
+      heroTitle: "打造小而美的原生应用。",
+      heroDescription: "ZenSoft 是绍兴市臻书科技有限公司旗下的软件品牌，为各类平台开发原生应用，并提供浏览器内即可使用的在线工具。产品围绕真实需求设计，注重长期维护与数据隐私。",
+      companyTitle: "从真实需求出发，\n持续开发，长期维护。",
+      companyDescription: "ZenSoft 是绍兴市臻书科技有限公司旗下的软件品牌，为各类平台开发原生应用与在线工具。产品从真实使用场景出发，注重可靠性、运行效率与数据隐私，并在发布后持续维护。",
+      companyLocation: "浙江省绍兴市",
+      scopeLabel: "业务范围",
+      scopeList: [
+        { title: "原生应用开发", description: "为各类平台设计与开发原生应用，跟随系统演进持续维护。" },
+        { title: "在线工具服务", description: "提供无需安装的浏览器效率工具，文件处理在用户本地完成。" },
+        { title: "软件授权与支持", description: "提供授权发放、订单管理与售后技术支持，保障已购用户的长期使用。" },
       ],
-      footer: "面向 Apple 平台的原生应用与软件服务。", companyName: "绍兴市臻书科技有限公司",
+      footer: "原生应用与软件服务。", companyName: "绍兴市臻书科技有限公司",
     },
     en: {
-      navLabel: "Main navigation", homeLabel: "ZenSoft home", apps: "Apps", principles: "Principles", language: "中", languageLabel: "切换到中文",
-      studio: "Shaoxing Zhenshu Technology Co., Ltd.", headlinePlain: "Native applications for", headlineAccent: "Apple platforms.",
-      heroDescription: "ZenSoft provides native applications for macOS, iOS, and Apple TV, with a focus on practical use cases, product stability, and data privacy.",
-      browseApps: "View products", about: "Company profile", overviewLabel: "Product overview", onSale: "released product", nativeApps: "native applications", tracking: "third-party behavior tracking",
-      toolkit: "A native application portfolio\nfor everyday use.", productMatrix: "Products and services", productTitle: "Supporting productivity, device management,\nand digital entertainment.",
-      productIntro: "Each product addresses a defined requirement and is adapted to the interaction patterns and system capabilities of Apple platforms.",
-      ...COMPANY_COPY_DEFAULTS.en,
-      principleLabel: "Product principles", principleTitle: "Improving products through clear standards.",
-      principleDescription: "Our design and development process prioritizes platform consistency, data privacy, and long-term maintainability, supported by continuous product iteration.",
-      principlesList: [
-        { title: "Native development", description: "Designed and implemented around each platform's interaction standards and system capabilities." },
-        { title: "Privacy protection", description: "Use on-device processing where practical and minimize unnecessary data collection." },
-        { title: "Focused design", description: "Organize interfaces and functionality around core requirements, reducing unnecessary steps and distractions." },
+      navLabel: "Main navigation", homeLabel: "ZenSoft home", productsLabel: "Products", appsGroupLabel: "Native Apps", toolsGroupLabel: "Online Tools",
+      companyLabel: "Company Profile", language: "中", languageLabel: "切换到中文",
+      heroTitle: "Well-crafted native apps,\nsmall by design.",
+      heroDescription: "ZenSoft is the software brand of Shaoxing Zhenshu Technology Co., Ltd. We develop native applications for a wide range of platforms and online tools that run directly in the browser. Products are designed around real needs, with attention to long-term maintenance and data privacy.",
+      companyTitle: "Software built around real needs\nand maintained for the long term.",
+      companyDescription: "ZenSoft is a software brand of Shaoxing Zhenshu Technology Co., Ltd. We develop native applications and online tools for a wide range of platforms. Every product starts from a real use case and is maintained with attention to reliability, efficiency, and data privacy.",
+      companyLocation: "Shaoxing, Zhejiang, China",
+      scopeLabel: "What We Do",
+      scopeList: [
+        { title: "Native app development", description: "Design and develop native applications for a wide range of platforms, maintained over the long term." },
+        { title: "Online tools", description: "Browser-based productivity tools that process files locally on the user's device." },
+        { title: "Licensing and support", description: "License delivery, order management, and after-sales technical support." },
       ],
-      footer: "Native applications and software services for Apple platforms.", companyName: "Shaoxing Zhenshu Technology Co., Ltd.",
+      footer: "Native applications and software services.", companyName: "Shaoxing Zhenshu Technology Co., Ltd.",
     },
   },
   products: [
@@ -108,10 +106,5 @@ export const DEFAULT_CONTENT: SiteContent = {
       copy: { zh: { name: "Visto · 拓屏", category: "iOS · macOS 副屏拓展", tagline: "把 iPhone / iPad 变成 Mac 的第二块屏幕", description: "通过 QUIC/TLS 1.3 无线或 USB 直连，将 Mac 画面以低延迟镜像到 iPhone 或 iPad，触控可直接回传为 Mac 输入；画面与输入只在设备间传输，不经云端。", features: ["QUIC 无线与 USB 直连", "硬件编解码低延迟", "触控回传 Mac 输入", "本地传输隐私优先"] }, en: { name: "Visto", category: "iOS · macOS second display", tagline: "Turn your iPhone or iPad into a second Mac screen", description: "Mirrors your Mac to an iPhone or iPad over QUIC/TLS 1.3 wireless or a USB cable, with hardware codecs, touch input sent straight back to the Mac, and a local-first design — video and input never leave your devices.", features: ["QUIC wireless and USB link", "Low-latency hardware codecs", "Touch input back to the Mac", "Local-first privacy"] } },
     },
   ],
-  seo: {
-    title: "ZenSoft — Apple 平台原生应用",
-    description: "ZenSoft 是绍兴市臻书科技有限公司运营的软件品牌，面向 macOS、iOS 与 Apple TV 提供原生应用。",
-    openGraphTitle: "ZenSoft — Apple 平台原生应用",
-    openGraphDescription: "绍兴市臻书科技有限公司面向 macOS、iOS 与 Apple TV 开发和维护原生应用。",
-  },
+  seo: { ...V3_SEO_DEFAULTS },
 };
