@@ -1,0 +1,21 @@
+http:
+  routers:
+    pdf-converter:
+      rule: "(Host(`zensoft.top`) || Host(`www.zensoft.top`)) && PathPrefix(`/api/pdf-convert/`)"
+      entrypoints: [websecure]
+      service: pdf-converter
+      middlewares: [pdf-converter-ipallow]
+      priority: 4000
+
+  middlewares:
+    pdf-converter-ipallow:
+      ipAllowList:
+        sourceRange:
+          - "101.37.124.50/32"
+          - "127.0.0.1/32"
+
+  services:
+    pdf-converter:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:13020"

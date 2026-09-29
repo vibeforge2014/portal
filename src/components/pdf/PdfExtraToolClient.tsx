@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { PDF_COPY, type CorePdfTool, type PdfLocale, type PdfTool } from "@/lib/pdf-tools";
 import type { CropMargins, JpgQuality, PageNumberPosition, PageSizePreset, PdfFormFieldInfo, RedactionRect, SignaturePosition, TextOverlayPosition } from "@/lib/pdf-operations";
 
-type ExtraPdfTool = Exclude<PdfTool, CorePdfTool>;
+type ExtraPdfTool = Exclude<PdfTool, CorePdfTool | "pdf-to-word" | "word-to-pdf">;
 type SelectedFile = { id: string; file: File; pages?: number };
 type ReadyResult = { url: string; filename: string; size: number; originalSize: number };
 

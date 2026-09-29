@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PdfExtraToolClient } from "@/components/pdf/PdfExtraToolClient";
+import { PdfOfficeConvertClient, type PdfOfficeTool } from "@/components/pdf/PdfOfficeConvertClient";
 import { PdfToolClient } from "@/components/pdf/PdfToolClient";
 import { PDF_COPY, PDF_TOOLS, isCorePdfTool, isPdfLocale, isPdfTool, pdfAlternates, pdfUrl } from "@/lib/pdf-tools";
 
@@ -29,12 +30,13 @@ export default async function PdfToolPage({ params }: Props) {
   if (!isPdfLocale(locale) || !isPdfTool(tool)) notFound();
   const copy = PDF_COPY[locale];
   const item = copy.toolsCopy[tool];
+  const officeTool = tool === "pdf-to-word" || tool === "word-to-pdf";
 
   return (
     <main className="pdf-page pdf-tool-page">
       <div className="pdf-breadcrumb"><a href="/">{copy.home}</a><span aria-hidden>›</span><span>{item.title}</span></div>
       <div className="pdf-page-intro"><h1>{item.title}</h1><p>{item.description}</p></div>
-      {isCorePdfTool(tool) ? <PdfToolClient locale={locale} tool={tool} /> : <PdfExtraToolClient locale={locale} tool={tool} />}
+      {officeTool ? <PdfOfficeConvertClient locale={locale} tool={tool as PdfOfficeTool} /> : isCorePdfTool(tool) ? <PdfToolClient locale={locale} tool={tool} /> : <PdfExtraToolClient locale={locale} tool={tool} />}
       <section className="pdf-help-grid" aria-label={copy.workflowTitle}>
         <div><h2>{copy.workflowTitle}</h2><p>{item.detail}</p><ol>{item.steps.map((step) => <li key={step}>{step}</li>)}</ol></div>
         <div><h2>{copy.limitationTitle}</h2><p>{item.limitation}</p></div>

@@ -7,7 +7,7 @@ import { PDF_COPY, pdfUrl, type PdfLocale, type PdfTool } from "@/lib/pdf-tools"
 const GROUPS: { key: "organize" | "optimize" | "convert" | "edit" | "security" | "review"; tools: PdfTool[] }[] = [
   { key: "organize", tools: ["merge", "split", "remove-pages", "extract-pages", "organize", "reverse-pages", "scan-to-pdf"] },
   { key: "optimize", tools: ["compress", "repair", "grayscale", "linearize"] },
-  { key: "convert", tools: ["jpg-to-pdf", "pdf-to-jpg", "pdf-to-png", "pdf-to-text", "pdf-to-markdown"] },
+  { key: "convert", tools: ["jpg-to-pdf", "word-to-pdf", "pdf-to-word", "pdf-to-jpg", "pdf-to-png", "pdf-to-text", "pdf-to-markdown"] },
   { key: "edit", tools: ["rotate", "page-numbers", "watermark", "crop", "resize", "edit", "sign", "redact", "fill-forms", "flatten-forms"] },
   { key: "security", tools: ["protect", "unlock"] },
   { key: "review", tools: ["compare"] },
@@ -19,7 +19,7 @@ const GROUP_LABELS: Record<PdfLocale, Record<(typeof GROUPS)[number]["key"], str
   en: { organize: "Organize PDF", optimize: "Optimize PDF", convert: "Convert PDF", edit: "Edit PDF", security: "Secure PDF", review: "Review PDF" },
 };
 
-const TOOL_GLYPHS: Record<PdfTool, string> = { merge: "⇄", split: "✂", "remove-pages": "×", "extract-pages": "▤", organize: "↕", "reverse-pages": "⇅", "scan-to-pdf": "⌑", compress: "↘", repair: "✣", grayscale: "◐", linearize: "⚡", "jpg-to-pdf": "▧", "pdf-to-jpg": "▣", "pdf-to-png": "▦", "pdf-to-text": "T", "pdf-to-markdown": "M", rotate: "↻", "page-numbers": "#", watermark: "W", crop: "⌗", resize: "↔", edit: "T+", sign: "✎", redact: "■", "fill-forms": "✓", "flatten-forms": "▱", protect: "⌾", unlock: "◌", compare: "≠" };
+const TOOL_GLYPHS: Record<PdfTool, string> = { merge: "⇄", split: "✂", "remove-pages": "×", "extract-pages": "▤", organize: "↕", "reverse-pages": "⇅", "scan-to-pdf": "⌑", compress: "↘", repair: "✣", grayscale: "◐", linearize: "⚡", "jpg-to-pdf": "▧", "word-to-pdf": "W", "pdf-to-word": "W", "pdf-to-jpg": "▣", "pdf-to-png": "▦", "pdf-to-text": "T", "pdf-to-markdown": "M", rotate: "↻", "page-numbers": "#", watermark: "W", crop: "⌗", resize: "↔", edit: "T+", sign: "✎", redact: "■", "fill-forms": "✓", "flatten-forms": "▱", protect: "⌾", unlock: "◌", compare: "≠" };
 
 export function PdfToolDropdown({ locale, compact = false }: { locale: PdfLocale; compact?: boolean }) {
   const detailsRef = useRef<HTMLDetailsElement>(null);

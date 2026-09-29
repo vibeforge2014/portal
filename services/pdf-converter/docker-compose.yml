@@ -1,0 +1,82 @@
+services:
+  api:
+    image: zensoft/pdf-converter-api:${PDF_CONVERTER_TAG:-20260930}
+    container_name: zensoft-pdf-converter-api
+    restart: unless-stopped
+    depends_on:
+      gotenberg:
+        condition: service_healthy
+    environment:
+      JOB_ROOT: /data/jobs
+      GOTENBERG_URL: http://gotenberg:3000
+    volumes:
+      - /var/lib/zensoft-pdf-converter/jobs:/data/jobs
+    networks: [converter]
+    read_only: true
+    tmpfs:
+      - /tmp:size=1g,mode=1777
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 512
+    mem_limit: 3g
+    cpus: 2.0
+    logging:
+      driver: json-file
+      options: { max-size: 10m, max-file: "3" }
+
+  ingress:
+    image: zensoft/pdf-converter-ingress:${PDF_CONVERTER_TAG:-20260930}
+    container_name: zensoft-pdf-converter-ingress
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - 127.0.0.1:13020:8080
+    networks: [converter, ingress]
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
+    mem_limit: 128m
+    cpus: 0.25
+    logging:
+      driver: json-file
+      options: { max-size: 5m, max-file: "2" }
+
+  gotenberg:
+    image: zensoft/gotenberg-cjk:${PDF_CONVERTER_TAG:-20260930}
+    container_name: zensoft-pdf-converter-gotenberg
+    restart: unless-stopped
+    command:
+      - gotenberg
+      - --api-timeout=300s
+      - --libreoffice-disable-routes=false
+      - --chromium-disable-routes=true
+      - --webhook-disable=true
+      - --prometheus-disable-collect=true
+    healthcheck:
+      test: [CMD, curl, --fail, --silent, --show-error, http://127.0.0.1:3000/health]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+    networks: [converter]
+    read_only: true
+    tmpfs:
+      - /tmp:size=2g,mode=1777
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 512
+    mem_limit: 3g
+    cpus: 2.0
+    logging:
+      driver: json-file
+      options: { max-size: 10m, max-file: "3" }
+
+networks:
+  converter:
+    internal: true
+  ingress: {}

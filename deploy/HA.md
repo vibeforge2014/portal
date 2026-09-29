@@ -12,7 +12,9 @@
                     │     nginx(8443, 仅允许主 IP) → Docker 容器 Node:3000
                     └─ 39.184.194.28:8444    三号节点（家宽动态 IP，后端）
                           Traefik(8444 plain + 8443 TLS，仅允许主 IP)
-                          → Docker 容器 Node @127.0.0.1:13000
+                          ├─ Docker 容器 Node @127.0.0.1:13000
+                          └─ PDF/Word 转换入口 @127.0.0.1:13020
+                               → 内网 API → Gotenberg/LibreOffice
                               │
                 数据同步：主 → 两个后端，每 5 分钟（sqlite .backup 快照 + uploads + 产品子站）
                           后端同步后自动重启应用（主 upstream 自动兜底）
@@ -35,6 +37,7 @@
 | 任一节点应用挂/重启 | nginx 秒级重试其他节点 | 自动，无需人工 |
 | 任一后端整机下线 | upstream 摘除，流量走其余节点 | 自动 |
 | 三号机家宽重拨换 IP | connect 超时后摘除，降级为两个节点 | 更新主 nginx、同步脚本和发布脚本的地址 |
+| PDF/Word 转换容器故障 | 两个在线转换工具提示服务不可用，其他 29 个 PDF 工具与 portal 不受影响 | 在三号机检查 `/opt/zensoft-pdf-converter/current` 与容器日志，重新运行转换服务发布脚本 |
 | 主机整机下线 | 站点不可用（见上） | 重启主机；systemd 自拉起全套 |
 | 主机与后端网络断 | 同步 cron 失败（日志在 /var/log/zensoft-sync.log），其余节点继续服务 | 网络恢复即自愈 |
 
@@ -48,6 +51,9 @@
    与主服务器产物字节一致。二号机资源上限 512m/1.5cpu。
 4. 三号机 portal 应用监听 127.0.0.1:13000；主机用 `/root/.ssh/zensoft_sync` 将数据及发布产物
    转发到两台后端。Mac 的 `~/.ssh/zensoft_deploy` 只需能连接主机。
+5. PDF/Word 转换服务只运行在三号机。API 与 Gotenberg 只接入 Docker internal 网络，只有无文件权限的
+   ingress 容器监听 `127.0.0.1:13020`；Traefik 8443 再以主服务器 IP 白名单对外提供专用路由。
+   任务目录为 `0700`，单并发、最多排队 8 个，下载后删除且 15 分钟兜底清理。
 
 ## 文件清单
 
@@ -60,6 +66,8 @@
 | 二号 /etc/systemd/system/zensoft.service | `deploy/zensoft-secondary-docker.service`（Docker 运行时；/app 挂载必须可写，ISR 回写需要） |
 | 主 /etc/nginx/snippets/zensoft-static-meta.conf | `deploy/zensoft-static-meta.conf`；robots 由 nginx 返回，sitemap 从 `/var/www/zensoft/sitemap.xml` 静态读取 |
 | 三号节点 | Docker portal Node 127.0.0.1:13000（3000 被 new-api 占用）；Traefik 8444/8443 仅允许主 IP；SSH 8222；仓库在 /home/soft/portal-src |
+| 三号 `/opt/zensoft-pdf-converter` | PDF/Word 转换 release、compose 配置与当前版本软链；任务数据在 `/var/lib/zensoft-pdf-converter/jobs` |
+| 三号 `/home/soft/gateway/dynamic/pdf-converter.yml` | `deploy/pdf-converter-traefik.yml`（TLS 路由与主服务器 IP 白名单） |
 | 主和二号 /etc/ssh/sshd_config | 密码登录已关闭（`PasswordAuthentication no` + `PermitRootLogin prohibit-password`，仅密钥；锁死时用阿里云控制台网页终端救急） |
 | 主和二号 /etc/sysctl.d/99-zensoft-no-ping.conf | 内核禁 ping（`net.ipv4.icmp_echo_ignore_all=1`，只忽略 echo-request，不影响 PMTUD/SSH/同步/网站） |
 | 仓库 deploy/build-linux.sh | 本机一键构建 linux/amd64 产物（arm64 构建 + x64 原生模块替换） |
@@ -74,6 +82,9 @@
   - sharp 换 x64 后必须补 `sharp/node_modules/semver`（build-linux.sh 已处理），否则 /api/media 整体 500。
   - `/sitemap.xml` 在主机 nginx 静态提供。发布脚本从主 Node 拉取生成结果并原子替换静态文件；
     新工具页上线时，确认公网站点地图包含其 URL。
+- **发布转换服务**：本机运行 `PDF_CONVERTER_TAG=<tag> services/pdf-converter/build-images.sh`，再运行
+  `PDF_CONVERTER_TAG=<tag> deploy/deploy-pdf-converter.sh <release-name>`。脚本只向服务器传输并加载
+  本机构建的 `linux/amd64` 镜像，服务器不得执行镜像构建、npm 安装或应用编译。
 - **回滚一台**：`ssh -p <22或8222> <host> 'ln -sfn /opt/zensoft/releases/<旧release>/app /opt/zensoft/current && systemctl restart zensoft'`
 - **手动同步**：`ssh root@101.37.124.50 /usr/local/bin/zensoft-sync.sh`
 - **演练**（建议每季度）：
