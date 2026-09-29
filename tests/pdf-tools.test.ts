@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { unzipSync } from "fflate";
 import { PDFDocument } from "pdf-lib";
-import { addPageNumbers, compressPdf, cropPdf, flattenPdfForms, imagesToPdf, mergePdfs, parsePageRange, removePdfPages, reorderPdf, repairPdf, resizePdfPages, reversePdfPages, rotatePdf, scanImagesToPdf, splitPdf } from "../src/lib/pdf-operations";
+import { addPageNumbers, compressPdf, cropPdf, fillPdfForm, flattenPdfForms, imagesToPdf, inspectPdfForm, linearizePdf, mergePdfs, parsePageRange, protectPdf, removePdfPages, reorderPdf, repairPdf, resizePdfPages, reversePdfPages, rotatePdf, scanImagesToPdf, splitPdf, unlockPdf } from "../src/lib/pdf-operations";
 
 async function sampleFile(name: string, pageWidths: number[]): Promise<File> {
   const pdf = await PDFDocument.create();
@@ -130,4 +130,45 @@ test("flattens interactive form fields into page content", async () => {
   const flattened = await PDFDocument.load(result.bytes);
   assert.equal(flattened.getForm().getFields().length, 0);
   assert.equal(flattened.getPageCount(), 1);
+});
+
+test("inspects and fills standard AcroForm fields", async () => {
+  const document = await PDFDocument.create();
+  const page = document.addPage([300, 300]);
+  const form = document.getForm();
+  const name = form.createTextField("customer.name");
+  name.addToPage(page, { x: 20, y: 220, width: 180, height: 30 });
+  const subscribed = form.createCheckBox("customer.subscribed");
+  subscribed.addToPage(page, { x: 20, y: 170, width: 20, height: 20 });
+  const source = new File([new Uint8Array(await document.save())], "form.pdf", { type: "application/pdf" });
+
+  assert.deepEqual(await inspectPdfForm(source), [
+    { name: "customer.name", type: "text", value: "" },
+    { name: "customer.subscribed", type: "checkbox", value: false },
+  ]);
+
+  const result = await fillPdfForm(source, { "customer.name": "Ada Lovelace", "customer.subscribed": true });
+  const filled = await PDFDocument.load(result.bytes);
+  assert.equal(filled.getForm().getTextField("customer.name").getText(), "Ada Lovelace");
+  assert.equal(filled.getForm().getCheckBox("customer.subscribed").isChecked(), true);
+});
+
+test("encrypts with AES-256 and decrypts with the supplied password", async () => {
+  const source = await sampleFile("source.pdf", [101, 202]);
+  const protectedResult = await protectPdf(source, "open-secret", "owner-secret", true);
+  const protectedText = Buffer.from(protectedResult.bytes).toString("latin1");
+  const encryptedBuffer = protectedResult.bytes.buffer.slice(protectedResult.bytes.byteOffset, protectedResult.bytes.byteOffset + protectedResult.bytes.byteLength) as ArrayBuffer;
+  assert.match(protectedText, /\/Encrypt/);
+  await assert.rejects(PDFDocument.load(protectedResult.bytes), /encrypted/i);
+  await assert.rejects(unlockPdf(new File([encryptedBuffer], "protected.pdf", { type: "application/pdf" }), "wrong-secret"));
+
+  const unlocked = await unlockPdf(new File([encryptedBuffer], "protected.pdf", { type: "application/pdf" }), "open-secret");
+  assert.equal((await PDFDocument.load(unlocked.bytes)).getPageCount(), 2);
+});
+
+test("linearizes a PDF for fast web view without changing its pages", async () => {
+  const source = await sampleFile("source.pdf", [101, 202, 303]);
+  const result = await linearizePdf(source);
+  assert.match(Buffer.from(result.bytes.subarray(0, 1024)).toString("latin1"), /\/Linearized/);
+  assert.equal((await PDFDocument.load(result.bytes)).getPageCount(), 3);
 });

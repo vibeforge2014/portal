@@ -4,21 +4,22 @@ import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { PDF_COPY, pdfUrl, type PdfLocale, type PdfTool } from "@/lib/pdf-tools";
 
-const GROUPS: { key: "organize" | "optimize" | "convert" | "edit" | "review"; tools: PdfTool[] }[] = [
+const GROUPS: { key: "organize" | "optimize" | "convert" | "edit" | "security" | "review"; tools: PdfTool[] }[] = [
   { key: "organize", tools: ["merge", "split", "remove-pages", "extract-pages", "organize", "reverse-pages", "scan-to-pdf"] },
-  { key: "optimize", tools: ["compress", "repair", "grayscale"] },
+  { key: "optimize", tools: ["compress", "repair", "grayscale", "linearize"] },
   { key: "convert", tools: ["jpg-to-pdf", "pdf-to-jpg", "pdf-to-png", "pdf-to-text", "pdf-to-markdown"] },
-  { key: "edit", tools: ["rotate", "page-numbers", "watermark", "crop", "resize", "sign", "flatten-forms"] },
+  { key: "edit", tools: ["rotate", "page-numbers", "watermark", "crop", "resize", "edit", "sign", "redact", "fill-forms", "flatten-forms"] },
+  { key: "security", tools: ["protect", "unlock"] },
   { key: "review", tools: ["compare"] },
 ];
 
 const GROUP_LABELS: Record<PdfLocale, Record<(typeof GROUPS)[number]["key"], string>> = {
-  "zh-hans": { organize: "整理 PDF", optimize: "优化 PDF", convert: "转换 PDF", edit: "编辑 PDF", review: "检查 PDF" },
-  "zh-hant": { organize: "整理 PDF", optimize: "最佳化 PDF", convert: "轉換 PDF", edit: "編輯 PDF", review: "檢查 PDF" },
-  en: { organize: "Organize PDF", optimize: "Optimize PDF", convert: "Convert PDF", edit: "Edit PDF", review: "Review PDF" },
+  "zh-hans": { organize: "整理 PDF", optimize: "优化 PDF", convert: "转换 PDF", edit: "编辑 PDF", security: "安全 PDF", review: "检查 PDF" },
+  "zh-hant": { organize: "整理 PDF", optimize: "最佳化 PDF", convert: "轉換 PDF", edit: "編輯 PDF", security: "安全 PDF", review: "檢查 PDF" },
+  en: { organize: "Organize PDF", optimize: "Optimize PDF", convert: "Convert PDF", edit: "Edit PDF", security: "Secure PDF", review: "Review PDF" },
 };
 
-const TOOL_GLYPHS: Record<PdfTool, string> = { merge: "⇄", split: "✂", "remove-pages": "×", "extract-pages": "▤", organize: "↕", "reverse-pages": "⇅", "scan-to-pdf": "⌑", compress: "↘", repair: "✣", grayscale: "◐", "jpg-to-pdf": "▧", "pdf-to-jpg": "▣", "pdf-to-png": "▦", "pdf-to-text": "T", "pdf-to-markdown": "M", rotate: "↻", "page-numbers": "#", watermark: "W", crop: "⌗", resize: "↔", sign: "✎", "flatten-forms": "▱", compare: "≠" };
+const TOOL_GLYPHS: Record<PdfTool, string> = { merge: "⇄", split: "✂", "remove-pages": "×", "extract-pages": "▤", organize: "↕", "reverse-pages": "⇅", "scan-to-pdf": "⌑", compress: "↘", repair: "✣", grayscale: "◐", linearize: "⚡", "jpg-to-pdf": "▧", "pdf-to-jpg": "▣", "pdf-to-png": "▦", "pdf-to-text": "T", "pdf-to-markdown": "M", rotate: "↻", "page-numbers": "#", watermark: "W", crop: "⌗", resize: "↔", edit: "T+", sign: "✎", redact: "■", "fill-forms": "✓", "flatten-forms": "▱", protect: "⌾", unlock: "◌", compare: "≠" };
 
 export function PdfToolDropdown({ locale, compact = false }: { locale: PdfLocale; compact?: boolean }) {
   const detailsRef = useRef<HTMLDetailsElement>(null);

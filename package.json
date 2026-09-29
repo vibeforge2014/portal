@@ -20,6 +20,7 @@
     "next": "^16.3.3",
     "pdf-lib": "1.17.1",
     "pdfjs-dist": "6.3.289",
+    "pdfstudio": "0.4.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "sharp": "^0.35.4",
