@@ -61,7 +61,7 @@ export function SoftwareDropdown({ compact = false }: { compact?: boolean }) {
           <ul>
             <li>
               <a href={pdfProductUrl} aria-current={pathname.startsWith(`/${locale}/tools/pdf/`) ? "page" : undefined}>
-                <span className="software-pdf-product-icon" aria-hidden>PDF</span>
+                <img className="software-pdf-product-icon" src="/icons/pdf-toolbox.webp" alt="" aria-hidden />
                 <span className="software-app-copy"><strong>{pdfCopy.brandName}</strong><small>{pdfCategory}</small></span>
               </a>
             </li>
