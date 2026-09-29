@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { unzipSync } from "fflate";
 import { PDFDocument } from "pdf-lib";
-import { addPageNumbers, compressPdf, cropPdf, imagesToPdf, mergePdfs, parsePageRange, removePdfPages, reorderPdf, repairPdf, rotatePdf, scanImagesToPdf, splitPdf } from "../src/lib/pdf-operations";
+import { addPageNumbers, compressPdf, cropPdf, flattenPdfForms, imagesToPdf, mergePdfs, parsePageRange, removePdfPages, reorderPdf, repairPdf, resizePdfPages, reversePdfPages, rotatePdf, scanImagesToPdf, splitPdf } from "../src/lib/pdf-operations";
 
 async function sampleFile(name: string, pageWidths: number[]): Promise<File> {
   const pdf = await PDFDocument.create();
@@ -107,4 +107,27 @@ test("rebuilds PDFs and names camera-image output for scanning", async () => {
   const scanned = await scanImagesToPdf([new File([png], "scan.png", { type: "image/png" })]);
   assert.equal(scanned.filename, "scanned-pages.pdf");
   assert.equal((await PDFDocument.load(scanned.bytes)).getPageCount(), 1);
+});
+
+test("reverses pages and resizes portrait and landscape pages", async () => {
+  const source = await sampleFile("source.pdf", [101, 400]);
+  const reversed = await reversePdfPages(source);
+  assert.deepEqual((await PDFDocument.load(reversed.bytes)).getPages().map((page) => page.getWidth()), [400, 101]);
+
+  const resized = await resizePdfPages(source, "a4");
+  const sizes = (await PDFDocument.load(resized.bytes)).getPages().map((page) => [page.getWidth(), page.getHeight()].map(Math.round));
+  assert.deepEqual(sizes, [[595, 842], [842, 595]]);
+});
+
+test("flattens interactive form fields into page content", async () => {
+  const document = await PDFDocument.create();
+  const page = document.addPage([300, 300]);
+  const field = document.getForm().createTextField("customer.name");
+  field.addToPage(page, { x: 20, y: 220, width: 180, height: 30 });
+  field.setText("Ada Lovelace");
+  const source = new File([new Uint8Array(await document.save())], "form.pdf", { type: "application/pdf" });
+  const result = await flattenPdfForms(source);
+  const flattened = await PDFDocument.load(result.bytes);
+  assert.equal(flattened.getForm().getFields().length, 0);
+  assert.equal(flattened.getPageCount(), 1);
 });

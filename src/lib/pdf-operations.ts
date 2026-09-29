@@ -12,6 +12,8 @@ export type RasterQuality = "balanced" | "smaller";
 export type JpgQuality = "balanced" | "high";
 export type PageNumberPosition = "bottom-center" | "bottom-right" | "top-right";
 export type CropMargins = { top: number; right: number; bottom: number; left: number };
+export type PageSizePreset = "a4" | "letter";
+export type SignaturePosition = "bottom-left" | "bottom-center" | "bottom-right";
 
 function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality?: number): Promise<Blob> {
   return new Promise((resolve, reject) => {
@@ -185,6 +187,18 @@ export async function reorderPdf(file: File, pageOrder: number[], onProgress?: (
   return { bytes: await output.save({ useObjectStreams: true }), filename: "organized.pdf" };
 }
 
+export async function reversePdfPages(file: File, onProgress?: (done: number, total: number) => void): Promise<PdfResult> {
+  const source = await PDFDocument.load(await file.arrayBuffer());
+  const output = await PDFDocument.create();
+  const order = source.getPageIndices().reverse();
+  const pages = await output.copyPages(source, order);
+  pages.forEach((page, index) => {
+    output.addPage(page);
+    onProgress?.(index + 1, pages.length);
+  });
+  return { bytes: await output.save({ useObjectStreams: true }), filename: "reversed-pages.pdf" };
+}
+
 export async function imagesToPdf(files: File[], onProgress?: (done: number, total: number) => void): Promise<PdfResult> {
   if (files.length === 0) throw new Error("need-file");
   const output = await PDFDocument.create();
@@ -308,6 +322,13 @@ export async function pdfToText(file: File, onProgress?: (done: number, total: n
   return { bytes: new TextEncoder().encode(text), filename: "extracted-text.txt" };
 }
 
+export async function pdfToMarkdown(file: File, onProgress?: (done: number, total: number) => void): Promise<PdfResult> {
+  const pages = await extractTextPages(file, onProgress);
+  const title = file.name.replace(/\.pdf$/i, "").replace(/[\r\n#]+/g, " ").trim() || "Document";
+  const markdown = [`# ${title}`, ...pages.map((page, index) => `## Page ${index + 1}\n\n${page}`)].join("\n\n");
+  return { bytes: new TextEncoder().encode(markdown), filename: "document.md" };
+}
+
 export async function comparePdfText(first: File, second: File, onProgress?: (done: number, total: number) => void): Promise<PdfResult> {
   const firstPages = await extractTextPages(first, (done, total) => onProgress?.(done, total * 2));
   const secondPages = await extractTextPages(second, (done) => onProgress?.(firstPages.length + done, firstPages.length + Math.max(firstPages.length, done)));
@@ -358,6 +379,124 @@ export async function cropPdf(file: File, margins: CropMargins, onProgress?: (do
     onProgress?.(index + 1, pages.length);
   });
   return { bytes: await document.save({ useObjectStreams: true }), filename: "cropped.pdf" };
+}
+
+export async function resizePdfPages(file: File, preset: PageSizePreset, onProgress?: (done: number, total: number) => void): Promise<PdfResult> {
+  const original = new Uint8Array(await file.arrayBuffer());
+  const source = await PDFDocument.load(original);
+  // pdf-lib cannot embed a completely blank page until it has a content stream.
+  source.getPages().forEach((page) => page.drawRectangle({ x: 0, y: 0, width: 0, height: 0, opacity: 0 }));
+  const embeddable = await source.save({ useObjectStreams: true });
+  const output = await PDFDocument.create();
+  const embedded = await output.embedPdf(embeddable, source.getPageIndices());
+  const portrait = preset === "a4" ? { width: 595.28, height: 841.89 } : { width: 612, height: 792 };
+  embedded.forEach((page, index) => {
+    const landscape = page.width > page.height;
+    const targetWidth = landscape ? portrait.height : portrait.width;
+    const targetHeight = landscape ? portrait.width : portrait.height;
+    const margin = 24;
+    const scale = Math.min((targetWidth - margin * 2) / page.width, (targetHeight - margin * 2) / page.height);
+    const width = page.width * scale;
+    const height = page.height * scale;
+    const target = output.addPage([targetWidth, targetHeight]);
+    target.drawPage(page, { x: (targetWidth - width) / 2, y: (targetHeight - height) / 2, width, height });
+    onProgress?.(index + 1, embedded.length);
+  });
+  return { bytes: await output.save({ useObjectStreams: true }), filename: `resized-${preset}.pdf` };
+}
+
+export async function grayscalePdf(file: File, quality: JpgQuality, onProgress?: (done: number, total: number) => void): Promise<PdfResult> {
+  const loading = await loadPdfForRendering(new Uint8Array(await file.arrayBuffer()));
+  try {
+    const source = await loading.promise;
+    if (source.numPages > MAX_RASTER_PAGES) throw new Error("too-many-pages");
+    const output = await PDFDocument.create();
+    const scaleTarget = quality === "high" ? 2 : 1.45;
+    const jpegQuality = quality === "high" ? 0.9 : 0.8;
+    for (let index = 1; index <= source.numPages; index += 1) {
+      const page = await source.getPage(index);
+      const pageSize = page.getViewport({ scale: 1 });
+      const maxScale = Math.sqrt(5_000_000 / (pageSize.width * pageSize.height));
+      const viewport = page.getViewport({ scale: Math.min(scaleTarget, maxScale) });
+      const canvas = window.document.createElement("canvas");
+      canvas.width = Math.max(1, Math.floor(viewport.width));
+      canvas.height = Math.max(1, Math.floor(viewport.height));
+      const context = canvas.getContext("2d", { alpha: false });
+      if (!context) throw new Error("canvas-unavailable");
+      context.fillStyle = "#ffffff";
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      await page.render({ canvas, canvasContext: context, viewport }).promise;
+
+      const grayscale = window.document.createElement("canvas");
+      grayscale.width = canvas.width;
+      grayscale.height = canvas.height;
+      const grayscaleContext = grayscale.getContext("2d", { alpha: false });
+      if (!grayscaleContext) throw new Error("canvas-unavailable");
+      grayscaleContext.filter = "grayscale(100%)";
+      grayscaleContext.drawImage(canvas, 0, 0);
+      const image = await output.embedJpg(await (await canvasToBlob(grayscale, "image/jpeg", jpegQuality)).arrayBuffer());
+      const target = output.addPage([pageSize.width, pageSize.height]);
+      target.drawImage(image, { x: 0, y: 0, width: pageSize.width, height: pageSize.height });
+      canvas.width = 0;
+      canvas.height = 0;
+      grayscale.width = 0;
+      grayscale.height = 0;
+      page.cleanup();
+      onProgress?.(index, source.numPages);
+    }
+    return { bytes: await output.save({ useObjectStreams: true }), filename: "grayscale.pdf" };
+  } finally {
+    await loading.destroy();
+  }
+}
+
+export async function flattenPdfForms(file: File, onProgress?: (done: number, total: number) => void): Promise<PdfResult> {
+  const document = await PDFDocument.load(await file.arrayBuffer());
+  const form = document.getForm();
+  if (form.getFields().length > 0) form.flatten();
+  const pages = document.getPageCount();
+  onProgress?.(pages, pages);
+  return { bytes: await document.save({ useObjectStreams: true }), filename: "flattened-form.pdf" };
+}
+
+async function createSignatureImage(text: string): Promise<{ bytes: Uint8Array; width: number; height: number }> {
+  const canvas = window.document.createElement("canvas");
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("canvas-unavailable");
+  context.font = 'italic 72px "Snell Roundhand", "Bradley Hand", "PingFang SC", cursive';
+  const measured = Math.ceil(context.measureText(text).width);
+  canvas.width = Math.max(180, measured + 40);
+  canvas.height = 110;
+  context.font = 'italic 72px "Snell Roundhand", "Bradley Hand", "PingFang SC", cursive';
+  context.fillStyle = "#17233b";
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.fillText(text, canvas.width / 2, canvas.height / 2);
+  const blob = await canvasToBlob(canvas, "image/png");
+  return { bytes: new Uint8Array(await blob.arrayBuffer()), width: canvas.width, height: canvas.height };
+}
+
+export async function signPdf(
+  file: File,
+  text: string,
+  pageNumber: number,
+  position: SignaturePosition,
+  onProgress?: (done: number, total: number) => void,
+): Promise<PdfResult> {
+  const value = text.trim();
+  if (!value) throw new Error("missing-signature");
+  const document = await PDFDocument.load(await file.arrayBuffer());
+  const pages = document.getPages();
+  if (!Number.isInteger(pageNumber) || pageNumber < 1 || pageNumber > pages.length) throw new Error("invalid-signature-page");
+  const source = await createSignatureImage(value);
+  const image = await document.embedPng(source.bytes);
+  const page = pages[pageNumber - 1];
+  const width = Math.min(180, page.getWidth() * 0.38);
+  const height = width * source.height / source.width;
+  const x = position === "bottom-left" ? 32 : position === "bottom-center" ? (page.getWidth() - width) / 2 : page.getWidth() - width - 32;
+  page.drawImage(image, { x, y: 32, width, height });
+  onProgress?.(1, 1);
+  return { bytes: await document.save({ useObjectStreams: true }), filename: "signed.pdf" };
 }
 
 export async function addPageNumbers(
