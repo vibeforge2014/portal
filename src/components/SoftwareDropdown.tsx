@@ -9,7 +9,7 @@ import { AppIcon } from "@/components/AppIcon";
 import { useLanguage } from "@/components/LanguageProvider";
 import { PDF_COPY, PDF_TOOLS, pdfUrl, type PdfLocale, type PdfTool } from "@/lib/pdf-tools";
 
-const TOOL_GLYPHS: Record<PdfTool, string> = { merge: "⇄", split: "✂", "remove-pages": "×", "extract-pages": "▤", organize: "↕", "reverse-pages": "⇅", "scan-to-pdf": "⌑", compress: "↘", repair: "✣", grayscale: "◐", "jpg-to-pdf": "▧", "pdf-to-jpg": "▣", "pdf-to-png": "▦", "pdf-to-text": "T", "pdf-to-markdown": "M", rotate: "↻", "page-numbers": "#", watermark: "W", crop: "⌗", resize: "↔", sign: "✎", "flatten-forms": "▱", compare: "≠" };
+const TOOL_GLYPHS: Record<PdfTool, string> = { merge: "⇄", split: "✂", "remove-pages": "×", "extract-pages": "▤", organize: "↕", "reverse-pages": "⇅", "scan-to-pdf": "⌑", compress: "↘", repair: "✣", grayscale: "◐", linearize: "⚡", "jpg-to-pdf": "▧", "pdf-to-jpg": "▣", "pdf-to-png": "▦", "pdf-to-text": "T", "pdf-to-markdown": "M", rotate: "↻", "page-numbers": "#", watermark: "W", crop: "⌗", resize: "↔", edit: "T+", sign: "✎", redact: "■", "fill-forms": "✓", "flatten-forms": "▱", protect: "⌾", unlock: "◌", compare: "≠" };
 
 export function SoftwareDropdown({ compact = false }: { compact?: boolean }) {
   const detailsRef = useRef<HTMLDetailsElement>(null);

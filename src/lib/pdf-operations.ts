@@ -1,4 +1,4 @@
-import { PDFDocument, StandardFonts, degrees, rgb } from "pdf-lib";
+import { PDFCheckBox, PDFDocument, PDFDropdown, PDFOptionList, PDFRadioGroup, PDFTextField, StandardFonts, degrees, rgb } from "pdf-lib";
 
 export const MAX_FILE_BYTES = 40 * 1024 * 1024;
 export const MAX_TOTAL_BYTES = 100 * 1024 * 1024;
@@ -14,6 +14,21 @@ export type PageNumberPosition = "bottom-center" | "bottom-right" | "top-right";
 export type CropMargins = { top: number; right: number; bottom: number; left: number };
 export type PageSizePreset = "a4" | "letter";
 export type SignaturePosition = "bottom-left" | "bottom-center" | "bottom-right";
+export type TextOverlayPosition = "top-left" | "top-center" | "top-right" | "center" | "bottom-left" | "bottom-right";
+export type RedactionRect = { x: number; y: number; width: number; height: number };
+export type PdfFormFieldInfo = { name: string; type: "text" | "checkbox" | "choice" | "unsupported"; value: string | boolean; options?: string[] };
+
+let pdfToolkitPromise: Promise<import("pdfstudio").PdfToolkit> | null = null;
+
+async function getPdfToolkit() {
+  if (!pdfToolkitPromise) {
+    pdfToolkitPromise = import("pdfstudio").then(({ createPdfToolkit }) => createPdfToolkit()).catch((error) => {
+      pdfToolkitPromise = null;
+      throw error;
+    });
+  }
+  return pdfToolkitPromise;
+}
 
 function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality?: number): Promise<Blob> {
   return new Promise((resolve, reject) => {
@@ -403,6 +418,154 @@ export async function resizePdfPages(file: File, preset: PageSizePreset, onProgr
     onProgress?.(index + 1, embedded.length);
   });
   return { bytes: await output.save({ useObjectStreams: true }), filename: `resized-${preset}.pdf` };
+}
+
+export async function protectPdf(
+  file: File,
+  password: string,
+  ownerPassword: string,
+  restrictChanges: boolean,
+  onProgress?: (done: number, total: number) => void,
+): Promise<PdfResult> {
+  if (!password) throw new Error("missing-password");
+  const toolkit = await getPdfToolkit();
+  const bytes = await toolkit.lock(file, {
+    userPassword: password,
+    ownerPassword: ownerPassword || password,
+    keyLength: 256,
+    permissions: restrictChanges ? { print: "full", modify: "none", extract: false } : undefined,
+  });
+  onProgress?.(1, 1);
+  return { bytes: bytes.slice(), filename: "protected.pdf" };
+}
+
+export async function unlockPdf(file: File, password: string, onProgress?: (done: number, total: number) => void): Promise<PdfResult> {
+  const toolkit = await getPdfToolkit();
+  const bytes = await toolkit.unlock(file, { password });
+  onProgress?.(1, 1);
+  return { bytes: bytes.slice(), filename: "unlocked.pdf" };
+}
+
+export async function linearizePdf(file: File, onProgress?: (done: number, total: number) => void): Promise<PdfResult> {
+  const toolkit = await getPdfToolkit();
+  const bytes = await toolkit.linearize(file);
+  onProgress?.(1, 1);
+  return { bytes: bytes.slice(), filename: "fast-web-view.pdf" };
+}
+
+async function createTextOverlayImage(text: string): Promise<{ bytes: Uint8Array; width: number; height: number }> {
+  const canvas = window.document.createElement("canvas");
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("canvas-unavailable");
+  context.font = '500 48px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+  const measured = Math.ceil(context.measureText(text).width);
+  canvas.width = Math.max(140, measured + 36);
+  canvas.height = 82;
+  context.font = '500 48px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+  context.fillStyle = "#111827";
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.fillText(text, canvas.width / 2, canvas.height / 2);
+  const blob = await canvasToBlob(canvas, "image/png");
+  return { bytes: new Uint8Array(await blob.arrayBuffer()), width: canvas.width, height: canvas.height };
+}
+
+export async function editPdfText(
+  file: File,
+  text: string,
+  pageNumber: number,
+  position: TextOverlayPosition,
+  onProgress?: (done: number, total: number) => void,
+): Promise<PdfResult> {
+  const value = text.trim();
+  if (!value) throw new Error("missing-edit-text");
+  const document = await PDFDocument.load(await file.arrayBuffer());
+  const pages = document.getPages();
+  if (!Number.isInteger(pageNumber) || pageNumber < 1 || pageNumber > pages.length) throw new Error("invalid-edit-page");
+  const source = await createTextOverlayImage(value);
+  const image = await document.embedPng(source.bytes);
+  const page = pages[pageNumber - 1];
+  const width = Math.min(page.getWidth() * 0.7, Math.max(110, source.width * 0.45));
+  const height = width * source.height / source.width;
+  const x = position.endsWith("left") ? 28 : position.endsWith("right") ? page.getWidth() - width - 28 : (page.getWidth() - width) / 2;
+  const y = position.startsWith("top") ? page.getHeight() - height - 28 : position === "center" ? (page.getHeight() - height) / 2 : 28;
+  page.drawImage(image, { x, y, width, height });
+  onProgress?.(1, 1);
+  return { bytes: await document.save({ useObjectStreams: true }), filename: "edited.pdf" };
+}
+
+export async function redactPdf(
+  file: File,
+  pageNumber: number,
+  rect: RedactionRect,
+  onProgress?: (done: number, total: number) => void,
+): Promise<PdfResult> {
+  const loading = await loadPdfForRendering(new Uint8Array(await file.arrayBuffer()));
+  try {
+    const source = await loading.promise;
+    if (source.numPages > MAX_RASTER_PAGES) throw new Error("too-many-pages");
+    if (!Number.isInteger(pageNumber) || pageNumber < 1 || pageNumber > source.numPages) throw new Error("invalid-redaction-page");
+    const values = [rect.x, rect.y, rect.width, rect.height];
+    if (values.some((value) => !Number.isFinite(value) || value < 0 || value > 100) || rect.width <= 0 || rect.height <= 0 || rect.x + rect.width > 100 || rect.y + rect.height > 100) throw new Error("invalid-redaction");
+    const output = await PDFDocument.create();
+    for (let index = 1; index <= source.numPages; index += 1) {
+      const page = await source.getPage(index);
+      const pageSize = page.getViewport({ scale: 1 });
+      const maxScale = Math.sqrt(5_000_000 / (pageSize.width * pageSize.height));
+      const viewport = page.getViewport({ scale: Math.min(1.8, maxScale) });
+      const canvas = window.document.createElement("canvas");
+      canvas.width = Math.max(1, Math.floor(viewport.width));
+      canvas.height = Math.max(1, Math.floor(viewport.height));
+      const context = canvas.getContext("2d", { alpha: false });
+      if (!context) throw new Error("canvas-unavailable");
+      context.fillStyle = "#ffffff";
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      await page.render({ canvas, canvasContext: context, viewport }).promise;
+      if (index === pageNumber) {
+        context.fillStyle = "#000000";
+        context.fillRect(canvas.width * rect.x / 100, canvas.height * rect.y / 100, canvas.width * rect.width / 100, canvas.height * rect.height / 100);
+      }
+      const image = await output.embedJpg(await (await canvasToBlob(canvas, "image/jpeg", 0.94)).arrayBuffer());
+      const target = output.addPage([pageSize.width, pageSize.height]);
+      target.drawImage(image, { x: 0, y: 0, width: pageSize.width, height: pageSize.height });
+      canvas.width = 0;
+      canvas.height = 0;
+      page.cleanup();
+      onProgress?.(index, source.numPages);
+    }
+    return { bytes: await output.save({ useObjectStreams: true }), filename: "redacted.pdf" };
+  } finally {
+    await loading.destroy();
+  }
+}
+
+export async function inspectPdfForm(file: File): Promise<PdfFormFieldInfo[]> {
+  const document = await PDFDocument.load(await file.arrayBuffer());
+  return document.getForm().getFields().map((field) => {
+    if (field instanceof PDFTextField) return { name: field.getName(), type: "text", value: field.getText() ?? "" };
+    if (field instanceof PDFCheckBox) return { name: field.getName(), type: "checkbox", value: field.isChecked() };
+    if (field instanceof PDFDropdown) return { name: field.getName(), type: "choice", value: field.getSelected()[0] ?? "", options: field.getOptions() };
+    if (field instanceof PDFRadioGroup) return { name: field.getName(), type: "choice", value: field.getSelected() ?? "", options: field.getOptions() };
+    if (field instanceof PDFOptionList) return { name: field.getName(), type: "choice", value: field.getSelected()[0] ?? "", options: field.getOptions() };
+    return { name: field.getName(), type: "unsupported", value: "" };
+  });
+}
+
+export async function fillPdfForm(
+  file: File,
+  values: Record<string, string | boolean>,
+  onProgress?: (done: number, total: number) => void,
+): Promise<PdfResult> {
+  const document = await PDFDocument.load(await file.arrayBuffer());
+  const fields = document.getForm().getFields();
+  fields.forEach((field, index) => {
+    const value = values[field.getName()];
+    if (field instanceof PDFTextField && typeof value === "string") field.setText(value);
+    else if (field instanceof PDFCheckBox && typeof value === "boolean") value ? field.check() : field.uncheck();
+    else if ((field instanceof PDFDropdown || field instanceof PDFRadioGroup || field instanceof PDFOptionList) && typeof value === "string" && value) field.select(value);
+    onProgress?.(index + 1, fields.length || 1);
+  });
+  return { bytes: await document.save({ useObjectStreams: true }), filename: "filled-form.pdf" };
 }
 
 export async function grayscalePdf(file: File, quality: JpgQuality, onProgress?: (done: number, total: number) => void): Promise<PdfResult> {
