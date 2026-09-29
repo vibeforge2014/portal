@@ -172,3 +172,25 @@ test("linearizes a PDF for fast web view without changing its pages", async () =
   assert.match(Buffer.from(result.bytes.subarray(0, 1024)).toString("latin1"), /\/Linearized/);
   assert.equal((await PDFDocument.load(result.bytes)).getPageCount(), 3);
 });
+
+import sitemap from "../src/app/sitemap";
+import { PDF_COPY, PDF_LOCALES, PDF_TOOLS, pdfUrl } from "../src/lib/pdf-tools";
+
+test("registers 31 localized PDF tools including Word conversion", () => {
+  assert.equal(PDF_TOOLS.length, 31);
+  assert.ok(PDF_TOOLS.includes("pdf-to-word"));
+  assert.ok(PDF_TOOLS.includes("word-to-pdf"));
+  for (const locale of PDF_LOCALES) {
+    assert.ok(PDF_COPY[locale].toolsCopy["pdf-to-word"].title);
+    assert.ok(PDF_COPY[locale].toolsCopy["word-to-pdf"].title);
+  }
+});
+
+test("sitemap exposes all six localized Word conversion pages", () => {
+  const urls = new Set(sitemap().map((entry) => entry.url));
+  for (const locale of PDF_LOCALES) {
+    for (const tool of ["pdf-to-word", "word-to-pdf"] as const) {
+      assert.ok(urls.has(`https://zensoft.top${pdfUrl(locale, tool)}`));
+    }
+  }
+});

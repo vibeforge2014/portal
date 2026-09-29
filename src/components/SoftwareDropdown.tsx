@@ -17,7 +17,7 @@ export function SoftwareDropdown({ compact = false }: { compact?: boolean }) {
   const released = products.filter((product) => !product.draft);
   const pdfCopy = PDF_COPY[locale];
   const pdfProductUrl = pdfUrl(locale);
-  const pdfCategory = language === "zh" ? `${PDF_TOOLS.length} 个浏览器 PDF 工具` : `${PDF_TOOLS.length} browser PDF tools`;
+  const pdfCategory = language === "zh" ? `${PDF_TOOLS.length} 个 PDF 工具` : `${PDF_TOOLS.length} PDF tools`;
 
   useEffect(() => {
     function closeOnOutside(event: PointerEvent) {

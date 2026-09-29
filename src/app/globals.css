@@ -117,7 +117,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .pdf-dropdown-icon--merge, .pdf-dropdown-icon--split { background: #f07157; }
 .pdf-dropdown-icon--remove-pages, .pdf-dropdown-icon--extract-pages, .pdf-dropdown-icon--organize, .pdf-dropdown-icon--reverse-pages, .pdf-dropdown-icon--scan-to-pdf { background: #f07157; }
 .pdf-dropdown-icon--compress, .pdf-dropdown-icon--repair, .pdf-dropdown-icon--grayscale, .pdf-dropdown-icon--linearize { background: #8cbf65; }
-.pdf-dropdown-icon--jpg-to-pdf, .pdf-dropdown-icon--pdf-to-jpg, .pdf-dropdown-icon--pdf-to-png, .pdf-dropdown-icon--pdf-to-text, .pdf-dropdown-icon--pdf-to-markdown { background: #e5ad35; }
+.pdf-dropdown-icon--jpg-to-pdf, .pdf-dropdown-icon--word-to-pdf, .pdf-dropdown-icon--pdf-to-word, .pdf-dropdown-icon--pdf-to-jpg, .pdf-dropdown-icon--pdf-to-png, .pdf-dropdown-icon--pdf-to-text, .pdf-dropdown-icon--pdf-to-markdown { background: #e5ad35; }
 .pdf-dropdown-icon--rotate, .pdf-dropdown-icon--page-numbers, .pdf-dropdown-icon--watermark, .pdf-dropdown-icon--crop, .pdf-dropdown-icon--resize, .pdf-dropdown-icon--edit, .pdf-dropdown-icon--sign, .pdf-dropdown-icon--redact, .pdf-dropdown-icon--fill-forms, .pdf-dropdown-icon--flatten-forms { background: #a75f9c; }
 .pdf-dropdown-icon--protect, .pdf-dropdown-icon--unlock, .pdf-dropdown-icon--compare { background: #4f83b8; }
 .software-app-icon { width: 27px; height: 27px; flex: none; display: grid; place-items: center; }
