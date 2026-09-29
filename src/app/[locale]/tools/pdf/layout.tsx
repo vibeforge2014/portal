@@ -21,7 +21,7 @@ export default async function PdfLayout({ children, params }: { children: React.
       <header className="pdf-site-header">
         <nav className="pdf-site-nav" aria-label={copy.tools}>
           <a href={pdfUrl(locale)} className="pdf-brand">
-            <img src="/icons/pdf-toolbox.webp" className="pdf-brand-product-icon" alt="" aria-hidden />
+            <img src="/icons/pdf-toolbox-v2.webp" className="pdf-brand-product-icon" alt="" aria-hidden />
             <strong>{copy.brandName}</strong>
           </a>
           <div className="pdf-header-links">
