@@ -1,15 +1,13 @@
 "use client";
 
-// 主站导航的「软件产品」下拉：原生应用（后台数据，仅已发布）+ PDF 在线工具。
+// 主站导航的「软件产品」下拉：原生应用（后台数据，仅已发布）+ PDF 工具盒产品入口。
 // 交互骨架与 PdfToolDropdown 一致（details/summary + 外点/Esc 关闭），
 // 共用其下拉样式类，产品行样式见 globals.css 的 .software-app-*。
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { AppIcon } from "@/components/AppIcon";
 import { useLanguage } from "@/components/LanguageProvider";
-import { PDF_COPY, PDF_TOOLS, pdfUrl, type PdfLocale, type PdfTool } from "@/lib/pdf-tools";
-
-const TOOL_GLYPHS: Record<PdfTool, string> = { merge: "⇄", split: "✂", "remove-pages": "×", "extract-pages": "▤", organize: "↕", "reverse-pages": "⇅", "scan-to-pdf": "⌑", compress: "↘", repair: "✣", grayscale: "◐", linearize: "⚡", "jpg-to-pdf": "▧", "pdf-to-jpg": "▣", "pdf-to-png": "▦", "pdf-to-text": "T", "pdf-to-markdown": "M", rotate: "↻", "page-numbers": "#", watermark: "W", crop: "⌗", resize: "↔", edit: "T+", sign: "✎", redact: "■", "fill-forms": "✓", "flatten-forms": "▱", protect: "⌾", unlock: "◌", compare: "≠" };
+import { PDF_COPY, PDF_TOOLS, pdfUrl, type PdfLocale } from "@/lib/pdf-tools";
 
 export function SoftwareDropdown({ compact = false }: { compact?: boolean }) {
   const detailsRef = useRef<HTMLDetailsElement>(null);
@@ -17,7 +15,9 @@ export function SoftwareDropdown({ compact = false }: { compact?: boolean }) {
   const { language, text, products } = useLanguage();
   const locale: PdfLocale = language === "zh" ? "zh-hans" : "en";
   const released = products.filter((product) => !product.draft);
-  const toolsCopy = PDF_COPY[locale];
+  const pdfCopy = PDF_COPY[locale];
+  const pdfProductUrl = pdfUrl(locale);
+  const pdfCategory = language === "zh" ? `${PDF_TOOLS.length} 个浏览器 PDF 工具` : `${PDF_TOOLS.length} browser PDF tools`;
 
   useEffect(() => {
     function closeOnOutside(event: PointerEvent) {
@@ -56,17 +56,15 @@ export function SoftwareDropdown({ compact = false }: { compact?: boolean }) {
             ))}
           </ul>
         </div>
-        <div className="pdf-dropdown-group software-tools-group">
+        <div className="pdf-dropdown-group">
           <h2>{text.toolsGroupLabel}</h2>
           <ul>
-            {PDF_TOOLS.map((tool) => (
-              <li key={tool}>
-                <a href={pdfUrl(locale, tool)} aria-current={pathname === pdfUrl(locale, tool) ? "page" : undefined}>
-                  <span className={`pdf-dropdown-icon pdf-dropdown-icon--${tool}`} aria-hidden>{TOOL_GLYPHS[tool]}</span>
-                  <span>{toolsCopy.toolsCopy[tool].title}</span>
-                </a>
-              </li>
-            ))}
+            <li>
+              <a href={pdfProductUrl} aria-current={pathname.startsWith(`/${locale}/tools/pdf/`) ? "page" : undefined}>
+                <span className="software-pdf-product-icon" aria-hidden>PDF</span>
+                <span className="software-app-copy"><strong>{pdfCopy.brandName}</strong><small>{pdfCategory}</small></span>
+              </a>
+            </li>
           </ul>
         </div>
       </div>

@@ -108,8 +108,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .pdf-dropdown-chevron { display: inline-flex; align-items: center; color: rgb(var(--accent)); transition: transform .16s ease; }
 .pdf-tool-dropdown[open] .pdf-dropdown-chevron { transform: rotate(180deg); }
 .pdf-dropdown-panel { position: absolute; top: calc(100% + 12px); left: 0; right: 0; z-index: 70; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 30px; max-height: min(78vh, 720px); overflow: auto; padding: 28px 32px 32px; border: 1px solid rgb(var(--line) / .1); border-radius: 18px; background: rgb(var(--surface)); box-shadow: 0 24px 65px rgba(0, 0, 0, .16); }
-.nav-shell .pdf-dropdown-panel { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
-.nav-shell .software-tools-group ul { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 8px; }
+.nav-shell .pdf-dropdown-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .pdf-dropdown-group h2 { margin: 0 0 16px; color: rgb(var(--tertiary)); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 .pdf-dropdown-group ul { display: grid; gap: 5px; margin: 0; padding: 0; list-style: none; }
 .pdf-dropdown-group a { display: flex; align-items: center; gap: 11px; min-height: 43px; padding: 6px 8px; border-radius: 9px; color: rgb(var(--fg)); font-size: 13px; font-weight: 600; }
@@ -122,6 +121,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .pdf-dropdown-icon--rotate, .pdf-dropdown-icon--page-numbers, .pdf-dropdown-icon--watermark, .pdf-dropdown-icon--crop, .pdf-dropdown-icon--resize, .pdf-dropdown-icon--edit, .pdf-dropdown-icon--sign, .pdf-dropdown-icon--redact, .pdf-dropdown-icon--fill-forms, .pdf-dropdown-icon--flatten-forms { background: #a75f9c; }
 .pdf-dropdown-icon--protect, .pdf-dropdown-icon--unlock, .pdf-dropdown-icon--compare { background: #4f83b8; }
 .software-app-icon { width: 27px; height: 27px; flex: none; display: grid; place-items: center; }
+.software-pdf-product-icon { width: 27px; height: 27px; flex: none; display: grid; place-items:center; border-radius:7px; background:#ef4444; color:#fff; font-size:8px; font-weight:800; letter-spacing:-.04em; }
 .software-app-copy { display: grid; gap: 2px; min-width: 0; }
 .software-app-copy strong { font-size: 13px; font-weight: 600; line-height: 1.25; }
 .software-app-copy small { color: rgb(var(--secondary)); font-size: 11px; font-weight: 500; line-height: 1.4; }
@@ -188,11 +188,10 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .brand-wordmark small { font-size: 7px; }
   .nav-links { display: none; }
   .mobile-tools-menu { display: block; }
-  /* 收紧行高并隐去分类小字，让 9 项内容一屏放下、面板不出现内部滚动 */
+  /* 收紧行高并隐去分类小字，让产品入口在小屏中保持紧凑。 */
   .mobile-tools-menu .pdf-tool-dropdown summary { min-height: 44px; }
   .pdf-dropdown-panel { left: 0; right: 0; grid-template-columns: 1fr; gap: 20px; max-height: min(82vh, 640px); overflow: auto; padding: 18px; border-radius: 13px; }
   .nav-shell .pdf-dropdown-panel { grid-template-columns: 1fr; }
-  .nav-shell .software-tools-group ul { grid-template-columns: 1fr; }
   .software-app-copy small { display: none; }
   .pdf-dropdown-group ul { gap: 2px; }
   .language-toggle { min-width: 44px; height: 44px; }
