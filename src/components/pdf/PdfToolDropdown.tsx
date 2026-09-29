@@ -5,10 +5,10 @@ import { usePathname } from "next/navigation";
 import { PDF_COPY, pdfUrl, type PdfLocale, type PdfTool } from "@/lib/pdf-tools";
 
 const GROUPS: { key: "organize" | "optimize" | "convert" | "edit" | "review"; tools: PdfTool[] }[] = [
-  { key: "organize", tools: ["merge", "split", "remove-pages", "extract-pages", "organize", "scan-to-pdf"] },
-  { key: "optimize", tools: ["compress", "repair"] },
-  { key: "convert", tools: ["jpg-to-pdf", "pdf-to-jpg", "pdf-to-png", "pdf-to-text"] },
-  { key: "edit", tools: ["rotate", "page-numbers", "watermark", "crop"] },
+  { key: "organize", tools: ["merge", "split", "remove-pages", "extract-pages", "organize", "reverse-pages", "scan-to-pdf"] },
+  { key: "optimize", tools: ["compress", "repair", "grayscale"] },
+  { key: "convert", tools: ["jpg-to-pdf", "pdf-to-jpg", "pdf-to-png", "pdf-to-text", "pdf-to-markdown"] },
+  { key: "edit", tools: ["rotate", "page-numbers", "watermark", "crop", "resize", "sign", "flatten-forms"] },
   { key: "review", tools: ["compare"] },
 ];
 
@@ -18,7 +18,7 @@ const GROUP_LABELS: Record<PdfLocale, Record<(typeof GROUPS)[number]["key"], str
   en: { organize: "Organize PDF", optimize: "Optimize PDF", convert: "Convert PDF", edit: "Edit PDF", review: "Review PDF" },
 };
 
-const TOOL_GLYPHS: Record<PdfTool, string> = { merge: "⇄", split: "✂", "remove-pages": "×", "extract-pages": "▤", organize: "↕", "scan-to-pdf": "⌑", compress: "↘", repair: "✣", "jpg-to-pdf": "▧", "pdf-to-jpg": "▣", "pdf-to-png": "▦", "pdf-to-text": "T", rotate: "↻", "page-numbers": "#", watermark: "W", crop: "⌗", compare: "≠" };
+const TOOL_GLYPHS: Record<PdfTool, string> = { merge: "⇄", split: "✂", "remove-pages": "×", "extract-pages": "▤", organize: "↕", "reverse-pages": "⇅", "scan-to-pdf": "⌑", compress: "↘", repair: "✣", grayscale: "◐", "jpg-to-pdf": "▧", "pdf-to-jpg": "▣", "pdf-to-png": "▦", "pdf-to-text": "T", "pdf-to-markdown": "M", rotate: "↻", "page-numbers": "#", watermark: "W", crop: "⌗", resize: "↔", sign: "✎", "flatten-forms": "▱", compare: "≠" };
 
 export function PdfToolDropdown({ locale, compact = false }: { locale: PdfLocale; compact?: boolean }) {
   const detailsRef = useRef<HTMLDetailsElement>(null);
