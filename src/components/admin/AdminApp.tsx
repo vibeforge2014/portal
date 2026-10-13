@@ -159,7 +159,7 @@ function OrdersPanel({ csrf, fail, flash }: { csrf: string; fail: (error: unknow
   const [orders, setOrders] = useState<OrderRow[]>([]); const [total, setTotal] = useState(0); const [pageSize, setPageSize] = useState(20); const [page, setPage] = useState(1); const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({ channel: "", status: "", plan: "", email: "", product: "chargepilot" });
   const [detail, setDetail] = useState<OrderDetail | null>(null);
-  const [create, setCreate] = useState({ email: "", plan: "annual", product: "chargepilot", send: true }); const [createMessage, setCreateMessage] = useState("");
+  const [create, setCreate] = useState({ email: "", plan: "annual", send: true }); const [createMessage, setCreateMessage] = useState("");
 
   async function load(targetPage: number, source = filters) {
     const params = new URLSearchParams({ page: String(targetPage), pageSize: "20" });
@@ -207,9 +207,9 @@ function OrdersPanel({ csrf, fail, flash }: { csrf: string; fail: (error: unknow
     if (!email.includes("@")) { setCreateMessage("请输入有效的客户邮箱。"); return; }
     setCreateMessage("");
     try {
-      const data = await requestJson<{ license: { licenseKey: string; emailSentAt: string | null } }>("/api/admin/orders", { method: "POST", headers: { "content-type": "application/json", "x-csrf-token": csrf }, body: JSON.stringify({ action: "license.create", email, plan: create.plan, product: create.product, sendEmail: create.send }) });
+      const data = await requestJson<{ license: { licenseKey: string; emailSentAt: string | null } }>("/api/admin/orders", { method: "POST", headers: { "content-type": "application/json", "x-csrf-token": csrf }, body: JSON.stringify({ action: "license.create", email, plan: create.plan, sendEmail: create.send }) });
       setCreateMessage(`已创建激活码 ${data.license.licenseKey}（${data.license.emailSentAt ? "邮件已发送" : "未发送邮件"}）。`);
-      setCreate({ email: "", plan: create.plan, product: create.product, send: create.send });
+      setCreate({ email: "", plan: create.plan, send: create.send });
       await load(page);
     } catch (reason) { setCreateMessage(reason instanceof Error ? reason.message : "创建失败"); }
   }
@@ -223,19 +223,16 @@ function OrdersPanel({ csrf, fail, flash }: { csrf: string; fail: (error: unknow
       <article className="metric"><span>待支付 / 关闭</span><strong>{stats.pending}</strong><small>未成交订单</small></article>
       <article className="metric"><span>已退款</span><strong>{stats.refunded}</strong><small>激活码已自动吊销</small></article>
     </div>
-    <article className="admin-card"><h2>补偿发放激活码</h2><p className="hint">为客户手动创建激活码（source=manual，不限期），可选同步发送确认邮件。</p>
+    <article className="admin-card"><h2>补偿发放激活码</h2><p className="hint">为客户手动创建 ChargePilot 激活码（source=manual，不限期），可选同步发送确认邮件。MinuteFlow 激活码由官网授权服务签发，不在此创建。</p>
       <div className="orders-filters" style={{ marginTop: 14 }}>
-        <select value={create.product} onChange={(e) => setCreate({ ...create, product: e.target.value, plan: e.target.value === "minuteflow" ? "lifetime" : create.plan })}><option value="chargepilot">ChargePilot</option><option value="minuteflow">MinuteFlow</option></select>
         <input type="email" placeholder="客户邮箱" value={create.email} onChange={(e) => setCreate({ ...create, email: e.target.value })} />
-        {create.product === "minuteflow"
-          ? <select disabled><option>永久授权</option></select>
-          : <select value={create.plan} onChange={(e) => setCreate({ ...create, plan: e.target.value })}><option value="annual">年度授权</option><option value="lifetime">永久授权</option></select>}
+        <select value={create.plan} onChange={(e) => setCreate({ ...create, plan: e.target.value })}><option value="annual">年度授权</option><option value="lifetime">永久授权</option></select>
         <label className="check"><input type="checkbox" checked={create.send} onChange={(e) => setCreate({ ...create, send: e.target.checked })} /> 发送邮件</label>
         <button className="admin-primary" onClick={submitCreate}>创建激活码</button>
       </div>
       {createMessage && <p className="hint">{createMessage}</p>}
     </article>
-    <article className="admin-card"><div className="card-heading"><div><h2>订单</h2><p>点击行查看激活码与绑定设备。</p></div>
+    <article className="admin-card"><div className="card-heading"><div><h2>订单</h2><p>{filters.product === "minuteflow" ? "MinuteFlow 已支付订单由官网授权服务回写，仅供对账与折扣码用量统计。" : "点击行查看激活码与绑定设备。"}</p></div>
       <div className="orders-filters">
         <select value={filters.product} onChange={(e) => setFilters({ ...filters, product: e.target.value, plan: "" })}><option value="chargepilot">ChargePilot</option><option value="minuteflow">MinuteFlow</option></select>
         <select value={filters.channel} onChange={(e) => setFilters({ ...filters, channel: e.target.value })}><option value="">全部渠道</option><option value="alipay">支付宝</option><option value="wechat">微信</option></select>
