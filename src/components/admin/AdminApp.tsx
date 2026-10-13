@@ -4,12 +4,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ManagedProduct, SiteContent } from "@/lib/content-schema";
 import { BrandMark } from "@/components/SiteShell";
 import { mediaUrl } from "@/lib/media";
+import { DiscountsPanel } from "@/components/admin/DiscountsPanel";
+import { AnalyticsPanel } from "@/components/admin/AnalyticsPanel";
 
 type Asset = { id: string; name: string; kind: "logo" | "product-icon"; preset: boolean; builtin: boolean; width: number | null; height: number | null };
 type Session = { username: string; mustChangePassword: boolean };
-type Tab = "overview" | "orders" | "brand" | "content" | "products" | "media" | "seo" | "publish" | "security";
+type Tab = "overview" | "analytics" | "orders" | "discounts" | "brand" | "content" | "products" | "media" | "seo" | "publish" | "security";
 
-const tabs: Array<[Tab, string]> = [["overview", "概览"], ["orders", "订单"], ["brand", "品牌 Logo"], ["content", "页面内容"], ["products", "产品"], ["media", "媒体库"], ["seo", "SEO"], ["publish", "发布"], ["security", "安全"]];
+const tabs: Array<[Tab, string]> = [["overview", "概览"], ["analytics", "访问统计"], ["orders", "订单"], ["discounts", "折扣码"], ["brand", "品牌 Logo"], ["content", "页面内容"], ["products", "产品"], ["media", "媒体库"], ["seo", "SEO"], ["publish", "发布"], ["security", "安全"]];
 const copyLabels: Record<string, string> = {
   navLabel: "导航辅助名称", homeLabel: "首页辅助名称", productsLabel: "「软件产品」菜单名", appsGroupLabel: "下拉·原生应用分组", toolsGroupLabel: "下拉·在线工具分组",
   companyLabel: "公司介绍导航", language: "语言按钮", languageLabel: "语言按钮辅助名称",
@@ -53,9 +55,17 @@ export function AdminApp() {
 
   useEffect(() => { requestJson<{ user: Session; csrfToken: string }>("/api/admin/session").then(async (data) => { setSession(data.user); setCsrf(data.csrfToken); await loadData(); }).catch(() => {}).finally(() => setLoading(false)); }, [loadData]);
   useEffect(() => { if (session?.mustChangePassword) setTab("security"); }, [session]);
+  useEffect(() => { if (new URLSearchParams(window.location.search).get("tab") === "analytics") setTab("analytics"); }, []);
   const dirty = useMemo(() => content && published ? JSON.stringify(content) !== JSON.stringify(published) : false, [content, published]);
   function flash(message: string) { setNotice(message); setError(""); window.setTimeout(() => setNotice(""), 3500); }
   function fail(reason: unknown) { setError(reason instanceof Error ? reason.message : "操作失败"); setNotice(""); }
+  function selectTab(next: Tab) {
+    setTab(next);
+    const url = new URL(window.location.href);
+    if (next === "analytics") url.searchParams.set("tab", "analytics");
+    else for (const key of ["tab", "days", "locale"]) url.searchParams.delete(key);
+    window.history.replaceState(null, "", url);
+  }
   async function saveDraft() { if (!content) return; setBusy(true); try { const data = await requestJson<{ draft: SiteContent; status: typeof status }>("/api/admin/content", { method: "PUT", headers: { "content-type": "application/json", "x-csrf-token": csrf }, body: JSON.stringify(content) }); setContent(data.draft); setStatus(data.status); flash("草稿已保存"); } catch (reason) { fail(reason); } finally { setBusy(false); } }
   async function publish() { if (!content) return; setBusy(true); try { await requestJson("/api/admin/content", { method: "PUT", headers: { "content-type": "application/json", "x-csrf-token": csrf }, body: JSON.stringify(content) }); const data = await requestJson<{ published: SiteContent; status: typeof status }>("/api/admin/publish", { method: "POST", headers: { "x-csrf-token": csrf } }); setContent(data.published); setPublished(data.published); setStatus(data.status); flash("网站已发布"); } catch (reason) { fail(reason); } finally { setBusy(false); } }
   async function rollback() { if (!window.confirm("确认恢复上一版？当前线上版本会成为可再次恢复的上一版。")) return; setBusy(true); try { const data = await requestJson<{ published: SiteContent; status: typeof status }>("/api/admin/rollback", { method: "POST", headers: { "x-csrf-token": csrf } }); setContent(data.published); setPublished(data.published); setStatus(data.status); flash("已恢复上一版"); } catch (reason) { fail(reason); } finally { setBusy(false); } }
@@ -67,10 +77,12 @@ export function AdminApp() {
 
   const logoAssets = assets.filter((asset) => asset.kind === "logo"); const iconAssets = assets.filter((asset) => asset.kind === "product-icon");
   return <div className="admin-shell">
-    <aside className="admin-sidebar"><div className="admin-brand"><BrandMark compact /><div><strong>ZenSoft</strong><span>Content Studio</span></div></div><nav>{tabs.filter(([id]) => !session.mustChangePassword || id === "security").map(([id, label]) => <button key={id} className={tab === id ? "active" : ""} onClick={() => setTab(id)}>{label}{id === "publish" && dirty && <i />}</button>)}</nav><div className="admin-user"><span>{session.username}</span><button onClick={logout}>退出</button></div></aside>
-    <main className="admin-main"><header className="admin-topbar"><div><p className="eyebrow">ZENSoft CMS</p><h1>{tabs.find(([id]) => id === tab)?.[1]}</h1></div>{!session.mustChangePassword && tab !== "orders" && <div className="admin-actions">{dirty && <span className="dirty-badge">有未发布更改</span>}<button onClick={saveDraft} disabled={busy}>保存草稿</button><button className="admin-primary" onClick={publish} disabled={busy}>发布网站</button></div>}</header>
+    <aside className="admin-sidebar"><div className="admin-brand"><BrandMark compact /><div><strong>ZenSoft</strong><span>Content Studio</span></div></div><nav>{tabs.filter(([id]) => !session.mustChangePassword || id === "security").map(([id, label]) => <button key={id} className={tab === id ? "active" : ""} onClick={() => selectTab(id)}>{label}{id === "publish" && dirty && <i />}</button>)}</nav><div className="admin-user"><span>{session.username}</span><button onClick={logout}>退出</button></div></aside>
+    <main className="admin-main"><header className="admin-topbar"><div><p className="eyebrow">ZENSoft CMS</p><h1>{tabs.find(([id]) => id === tab)?.[1]}</h1></div>{!session.mustChangePassword && tab !== "orders" && tab !== "analytics" && tab !== "discounts" && <div className="admin-actions">{dirty && <span className="dirty-badge">有未发布更改</span>}<button onClick={saveDraft} disabled={busy}>保存草稿</button><button className="admin-primary" onClick={publish} disabled={busy}>发布网站</button></div>}</header>
       {notice && <div className="admin-notice">{notice}</div>}{error && <div className="admin-error banner">{error}</div>}
       {tab === "overview" && <Overview content={content} status={status} assets={assets} dirty={dirty} />}
+      {tab === "analytics" && !session.mustChangePassword && <AnalyticsPanel />}
+      {tab === "discounts" && !session.mustChangePassword && <DiscountsPanel csrf={csrf} products={(published ?? content).products} />}
       {tab === "orders" && <OrdersPanel csrf={csrf} fail={fail} flash={flash} />}
       {tab === "brand" && <BrandEditor content={content} setContent={setContent} logos={logoAssets} />}
       {tab === "content" && <ContentEditor content={content} setContent={setContent} />}
@@ -129,8 +141,8 @@ function SecurityPanel({ csrf, mustChange }: { csrf: string; mustChange: boolean
 }
 
 type OrderLicense = { id: string; licenseKey: string; status: string; validUntil: string | null; emailSentAt: string | null; devicesUsed: number };
-type OrderRow = { id: string; channel: string; outTradeNo: string; email: string; plan: string; amountFen: number; status: string; createdAt: string; paidAt: string | null; license: OrderLicense | null };
-type StatsRow = { channel: string; status: string; plan: string; order_count: number; paid_amount_fen: number | null };
+type OrderRow = { id: string; channel: string; product: string; outTradeNo: string; email: string; plan: string; amountFen: number; originalPriceFen: number; discountFen: number; discountCode: string | null; status: string; createdAt: string; paidAt: string | null; license: OrderLicense | null };
+type StatsRow = { channel: string; product: string; status: string; plan: string; order_count: number; paid_amount_fen: number | null };
 type DeviceRow = { id: string; device_id: string; device_name: string | null; app_version: string | null; activated_at: string; last_seen_at: string | null; revoked_at: string | null };
 type LicenseFull = { id: string; license_key: string; plan: string; status: string; valid_until: string | null; email_sent_at: string | null };
 type OrderDetail = { order: OrderRow; license: LicenseFull | null; devices: DeviceRow[] };
@@ -145,17 +157,19 @@ function formatTime(iso: string | null) { return iso ? new Intl.DateTimeFormat("
 function OrdersPanel({ csrf, fail, flash }: { csrf: string; fail: (error: unknown) => void; flash: (message: string) => void }) {
   const [stats, setStats] = useState({ paidCount: 0, paidAmount: 0, pending: 0, refunded: 0 });
   const [orders, setOrders] = useState<OrderRow[]>([]); const [total, setTotal] = useState(0); const [pageSize, setPageSize] = useState(20); const [page, setPage] = useState(1); const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({ channel: "", status: "", plan: "", email: "" });
+  const [filters, setFilters] = useState({ channel: "", status: "", plan: "", email: "", product: "chargepilot" });
   const [detail, setDetail] = useState<OrderDetail | null>(null);
-  const [create, setCreate] = useState({ email: "", plan: "annual", send: true }); const [createMessage, setCreateMessage] = useState("");
+  const [create, setCreate] = useState({ email: "", plan: "annual", product: "chargepilot", send: true }); const [createMessage, setCreateMessage] = useState("");
 
   async function load(targetPage: number, source = filters) {
     const params = new URLSearchParams({ page: String(targetPage), pageSize: "20" });
-    for (const key of ["channel", "status", "plan", "email"] as const) if (source[key]) params.set(key, source[key]);
+    for (const key of ["channel", "status", "plan", "email", "product"] as const) if (source[key]) params.set(key, source[key]);
     try {
       const data = await requestJson<{ total: number; page: number; pageSize: number; orders: OrderRow[]; stats: StatsRow[] }>(`/api/admin/orders?${params}`);
       const summary = { paidCount: 0, paidAmount: 0, pending: 0, refunded: 0 };
       for (const row of data.stats ?? []) {
+        // 共享订单表按产品分组；汇总只统计当前筛选的产品。
+        if (row.product && row.product !== (source.product || "chargepilot")) continue;
         if (row.status === "paid") { summary.paidCount += Number(row.order_count); summary.paidAmount += Number(row.paid_amount_fen ?? 0); }
         else if (row.status === "created" || row.status === "closed") summary.pending += Number(row.order_count);
         else if (row.status === "refunded") summary.refunded += Number(row.order_count);
@@ -193,9 +207,9 @@ function OrdersPanel({ csrf, fail, flash }: { csrf: string; fail: (error: unknow
     if (!email.includes("@")) { setCreateMessage("请输入有效的客户邮箱。"); return; }
     setCreateMessage("");
     try {
-      const data = await requestJson<{ license: { licenseKey: string; emailSentAt: string | null } }>("/api/admin/orders", { method: "POST", headers: { "content-type": "application/json", "x-csrf-token": csrf }, body: JSON.stringify({ action: "license.create", email, plan: create.plan, sendEmail: create.send }) });
+      const data = await requestJson<{ license: { licenseKey: string; emailSentAt: string | null } }>("/api/admin/orders", { method: "POST", headers: { "content-type": "application/json", "x-csrf-token": csrf }, body: JSON.stringify({ action: "license.create", email, plan: create.plan, product: create.product, sendEmail: create.send }) });
       setCreateMessage(`已创建激活码 ${data.license.licenseKey}（${data.license.emailSentAt ? "邮件已发送" : "未发送邮件"}）。`);
-      setCreate({ email: "", plan: create.plan, send: create.send });
+      setCreate({ email: "", plan: create.plan, product: create.product, send: create.send });
       await load(page);
     } catch (reason) { setCreateMessage(reason instanceof Error ? reason.message : "创建失败"); }
   }
@@ -211,8 +225,11 @@ function OrdersPanel({ csrf, fail, flash }: { csrf: string; fail: (error: unknow
     </div>
     <article className="admin-card"><h2>补偿发放激活码</h2><p className="hint">为客户手动创建激活码（source=manual，不限期），可选同步发送确认邮件。</p>
       <div className="orders-filters" style={{ marginTop: 14 }}>
+        <select value={create.product} onChange={(e) => setCreate({ ...create, product: e.target.value, plan: e.target.value === "minuteflow" ? "lifetime" : create.plan })}><option value="chargepilot">ChargePilot</option><option value="minuteflow">MinuteFlow</option></select>
         <input type="email" placeholder="客户邮箱" value={create.email} onChange={(e) => setCreate({ ...create, email: e.target.value })} />
-        <select value={create.plan} onChange={(e) => setCreate({ ...create, plan: e.target.value })}><option value="annual">年度授权</option><option value="lifetime">永久授权</option></select>
+        {create.product === "minuteflow"
+          ? <select disabled><option>永久授权</option></select>
+          : <select value={create.plan} onChange={(e) => setCreate({ ...create, plan: e.target.value })}><option value="annual">年度授权</option><option value="lifetime">永久授权</option></select>}
         <label className="check"><input type="checkbox" checked={create.send} onChange={(e) => setCreate({ ...create, send: e.target.checked })} /> 发送邮件</label>
         <button className="admin-primary" onClick={submitCreate}>创建激活码</button>
       </div>
@@ -220,9 +237,12 @@ function OrdersPanel({ csrf, fail, flash }: { csrf: string; fail: (error: unknow
     </article>
     <article className="admin-card"><div className="card-heading"><div><h2>订单</h2><p>点击行查看激活码与绑定设备。</p></div>
       <div className="orders-filters">
+        <select value={filters.product} onChange={(e) => setFilters({ ...filters, product: e.target.value, plan: "" })}><option value="chargepilot">ChargePilot</option><option value="minuteflow">MinuteFlow</option></select>
         <select value={filters.channel} onChange={(e) => setFilters({ ...filters, channel: e.target.value })}><option value="">全部渠道</option><option value="alipay">支付宝</option><option value="wechat">微信</option></select>
         <select value={filters.status} onChange={(e) => setFilters({ ...filters, status: e.target.value })}><option value="">全部状态</option>{Object.entries(orderStatuses).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
-        <select value={filters.plan} onChange={(e) => setFilters({ ...filters, plan: e.target.value })}><option value="">全部方案</option>{Object.entries(orderPlans).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
+        {filters.product === "minuteflow"
+          ? null
+          : <select value={filters.plan} onChange={(e) => setFilters({ ...filters, plan: e.target.value })}><option value="">全部方案</option>{Object.entries(orderPlans).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>}
         <input type="email" placeholder="按邮箱精确搜索" value={filters.email} onChange={(e) => setFilters({ ...filters, email: e.target.value })} onKeyDown={(e) => e.key === "Enter" && search()} />
         <button onClick={search}>查询</button>
       </div></div>
@@ -233,7 +253,7 @@ function OrdersPanel({ csrf, fail, flash }: { csrf: string; fail: (error: unknow
             <td>{formatTime(order.createdAt)}</td>
             <td>{orderChannels[order.channel] ?? order.channel}</td>
             <td>{orderPlans[order.plan] ?? order.plan}</td>
-            <td>{formatYuan(order.amountFen)}</td>
+            <td>{formatYuan(order.amountFen)}{order.discountCode && <small className="order-discount">{order.discountCode} · 优惠 {formatYuan(order.discountFen)}</small>}</td>
             <td><span className={`pill ${order.status}`}>{orderStatuses[order.status] ?? order.status}</span></td>
             <td>{order.email}</td>
             <td className="mono">{order.outTradeNo}</td>
@@ -250,6 +270,7 @@ function OrdersPanel({ csrf, fail, flash }: { csrf: string; fail: (error: unknow
           <div className="detail-box"><h3>订单</h3><dl>
             <dt>渠道</dt><dd>{orderChannels[detail.order.channel] ?? detail.order.channel}</dd>
             <dt>方案</dt><dd>{orderPlans[detail.order.plan] ?? detail.order.plan} · {formatYuan(detail.order.amountFen)}</dd>
+            {detail.order.discountCode && <><dt>原价 / 优惠</dt><dd>{formatYuan(detail.order.originalPriceFen)} / {formatYuan(detail.order.discountFen)}</dd><dt>折扣码</dt><dd className="mono">{detail.order.discountCode}</dd></>}
             <dt>状态</dt><dd><span className={`pill ${detail.order.status}`}>{orderStatuses[detail.order.status] ?? detail.order.status}</span></dd>
             <dt>邮箱</dt><dd>{detail.order.email}</dd>
             <dt>支付时间</dt><dd>{formatTime(detail.order.paidAt)}</dd>

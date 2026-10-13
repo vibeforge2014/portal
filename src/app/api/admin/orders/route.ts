@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
         channel: params.get("channel"),
         status: params.get("status"),
         plan: params.get("plan"),
+        product: params.get("product"),
         email: params.get("email"),
         page: Number(params.get("page")) || 1,
         pageSize: Number(params.get("pageSize")) || 20

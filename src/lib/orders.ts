@@ -56,6 +56,9 @@ export interface UnifiedOrder {
   email: string;
   plan: string;
   amountFen: number;
+  originalPriceFen: number;
+  discountFen: number;
+  discountCode: string | null;
   status: string;
   tradeId: string | null;
   createdAt: string;
@@ -64,6 +67,7 @@ export interface UnifiedOrder {
 
 export interface StatsRow {
   channel: string;
+  product: string;
   status: string;
   plan: string;
   order_count: number;
@@ -74,6 +78,7 @@ export interface OrderFilters {
   status?: string | null;
   plan?: string | null;
   channel?: string | null;
+  product?: string | null;
   email?: string | null;
   page?: number;
   pageSize?: number;
@@ -113,6 +118,8 @@ export async function listOrders(filters: OrderFilters) {
   const status = stringFilter(filters.status, "status", ["created", "paid", "closed", "refunded"]);
   const plan = stringFilter(filters.plan, "plan", ["annual", "lifetime"]);
   const channel = stringFilter(filters.channel, "channel", ["alipay", "wechat"]);
+  // 订单默认按产品过滤：不传时仅显示 ChargePilot，避免共享订单表后混排。
+  const product = stringFilter(filters.product, "product", ["chargepilot", "minuteflow"]) ?? "chargepilot";
   const email = stringFilter(filters.email, "email")?.toLowerCase() ?? null;
   const page = Math.max(1, Number(filters.page) || 1);
   const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, Number(filters.pageSize) || PAGE_SIZE));
@@ -124,8 +131,9 @@ export async function listOrders(filters: OrderFilters) {
   for (const name of channels) {
     const table = name === "alipay" ? "alipay_orders" : "wechat_orders";
     const tradeColumn = name === "alipay" ? "trade_no" : "transaction_id";
-    let query = db().from(table).select(`id, out_trade_no, email, plan, amount_fen, status, ${tradeColumn}, paid_at, created_at`);
+    let query = db().from(table).select(`id, out_trade_no, product, email, plan, amount_fen, original_amount_fen, discount_amount_fen, discount_code, status, ${tradeColumn}, paid_at, created_at`);
     let countQuery = db().from(table).select("id", { count: "exact", head: true });
+    query = query.eq("product", product); countQuery = countQuery.eq("product", product);
     if (status) { query = query.eq("status", status); countQuery = countQuery.eq("status", status); }
     if (plan) { query = query.eq("plan", plan); countQuery = countQuery.eq("plan", plan); }
     if (email) { query = query.eq("email", email); countQuery = countQuery.eq("email", email); }
@@ -140,11 +148,14 @@ export async function listOrders(filters: OrderFilters) {
       orders.push({
         id: row.id,
         channel: name,
-        product: "chargepilot",
+        product: (row.product as string | undefined) ?? "chargepilot",
         outTradeNo: row.out_trade_no,
         email: row.email,
         plan: row.plan,
         amountFen: row.amount_fen,
+        originalPriceFen: row.original_amount_fen ?? row.amount_fen,
+        discountFen: row.discount_amount_fen ?? 0,
+        discountCode: row.discount_code ?? null,
         status: row.status,
         tradeId: ((row as Record<string, unknown>)[tradeColumn] as string | null) ?? null,
         createdAt: row.created_at,
@@ -249,15 +260,18 @@ export async function resendLicenseEmail(licenseId: string) {
 }
 
 /// 手动创建激活码（补偿发放，source_type=manual，不限期）。
-export async function createLicense(input: { email?: unknown; plan?: unknown; sendEmail?: unknown }) {
+export async function createLicense(input: { email?: unknown; plan?: unknown; product?: unknown; sendEmail?: unknown }) {
   const email = typeof input.email === "string" ? input.email.trim().toLowerCase() : "";
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new OrderAdminError("邮箱无效。");
-  const plan = input.plan === "lifetime" ? "lifetime" : "annual";
+  const product = input.product === "minuteflow" ? "minuteflow" : "chargepilot";
+  // MinuteFlow 仅永久授权；ChargePilot 保持年度/永久可选。
+  const plan = product === "minuteflow" || input.plan === "lifetime" ? "lifetime" : "annual";
   const sendEmail = input.sendEmail !== false;
   const { data, error } = await db()
     .from("licenses")
     .insert({
-      license_key: generateLicenseKey(),
+      license_key: generateLicenseKey(product),
+      product,
       email,
       plan,
       source_type: "manual",
@@ -296,9 +310,10 @@ async function sendLicenseEmail(licenseId: string): Promise<void> {
   const { data, error } = await db().from("licenses").select("*").eq("id", licenseId).single();
   if (error) throw error;
   const license = data as LicenseRow;
+  const brand = emailBrand(license.product === "minuteflow" ? "minuteflow" : "chargepilot");
   await sendDirectMail({
     to: license.email,
-    subject: `【ChargePilot】购买成功，这是你的激活码（${license.license_key}）`,
+    subject: `【${brand.name}】购买成功，这是你的激活码（${license.license_key}）`,
     html: purchaseEmailHtml(license)
   });
   const { error: updateError } = await db()
@@ -327,7 +342,67 @@ function formatBeijingTime(iso: string): string {
   }).format(new Date(iso));
 }
 
+interface EmailBrand {
+  name: string;
+  tagline: string;
+  heading: string;
+  ink: string;
+  link: string;
+  codeBg: string;
+  codeBorder: string;
+  steps: string;
+  deviceNote: string;
+  refundLine: string;
+  supportEmail: string;
+  footer: string;
+}
+
+// 与 chargepilot 仓库 _shared/licenses.ts 的 EMAIL_BRANDS 保持一致，改动时两处同步。
+const EMAIL_BRANDS: Record<"chargepilot" | "minuteflow", EmailBrand> = {
+  chargepilot: {
+    name: "ChargePilot Pro",
+    tagline: "macOS 电池与充电管理",
+    heading: "⚡ ChargePilot Pro",
+    ink: "#173024",
+    link: "#1a7f4b",
+    codeBg: "#f0f7f2",
+    codeBorder: "#9fc7ab",
+    steps: [
+      '下载并安装 ChargePilot：<a href="https://zensoft.top/chargepilot/" style="color:#1a7f4b;">zensoft.top/chargepilot</a>',
+      "打开 App，进入 Pro 激活界面（设置 → 版本方案 → 了解 Pro）",
+      "粘贴上方激活码，点击「激活」即可解锁全部功能"
+    ].map((line) => `<li>${line}</li>`).join(""),
+    deviceNote: '<strong style="color:#173024;">设备说明</strong>：一个激活码最多同时激活 3 台 Mac。需要更换设备时，在 App 的「设置 → 版本方案」中点击「反激活此设备」即可释放名额，再到新设备上激活。',
+    refundLine: "首次购买适用 14 天退款政策。订单或激活问题请联系：",
+    supportEmail: "support@zensoft.top",
+    footer: "绍兴市臻书科技有限公司 · ChargePilot"
+  },
+  minuteflow: {
+    name: "MinuteFlow 桌面版",
+    tagline: "本地优先的会议转录与 AI 纪要",
+    heading: "🎙 MinuteFlow 桌面版",
+    ink: "#5A2C1C",
+    link: "#C2542F",
+    codeBg: "#fdf1ec",
+    codeBorder: "#e8b39e",
+    steps: [
+      '下载并安装 MinuteFlow：<a href="https://zensoft.top/minuteflow/" style="color:#C2542F;">zensoft.top/minuteflow</a>',
+      "打开 App，使用录音、转写或 AI 纪要任一功能，在解锁窗口点击「输入激活码」",
+      "粘贴上方激活码，点击「激活」即可解锁全部功能"
+    ].map((line) => `<li>${line}</li>`).join(""),
+    deviceNote: '<strong style="color:#5A2C1C;">设备说明</strong>：一个激活码最多同时激活 3 台设备（macOS / Windows 通用）。需要更换设备时，在 App 的授权界面点击「停用本机授权」即可释放名额，再到新设备上激活。',
+    refundLine: "购买后 7 天内可申请退款。订单或激活问题请联系：",
+    supportEmail: "xhdp123@126.com",
+    footer: "绍兴市臻书科技有限公司 · MinuteFlow"
+  }
+};
+
+function emailBrand(product: "chargepilot" | "minuteflow"): EmailBrand {
+  return EMAIL_BRANDS[product] ?? EMAIL_BRANDS.chargepilot;
+}
+
 export function purchaseEmailHtml(license: LicenseRow): string {
+  const brand = emailBrand(license.product === "minuteflow" ? "minuteflow" : "chargepilot");
   const planName = license.plan === "lifetime" ? "永久授权" : "年度授权（1 年）";
   const amountLine = license.amount_fen != null
     ? `<tr><td class="label">支付金额</td><td>${formatYuan(license.amount_fen)}</td></tr>`
@@ -344,22 +419,22 @@ export function purchaseEmailHtml(license: LicenseRow): string {
       <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid #e6eaee;">
         <tr>
           <td style="padding:26px 32px 10px;">
-            <div style="font-size:17px;font-weight:700;color:#173024;">⚡ ChargePilot Pro</div>
-            <div style="font-size:13px;color:#8a959e;margin-top:4px;">macOS 电池与充电管理</div>
+            <div style="font-size:17px;font-weight:700;color:${brand.ink};">${brand.heading}</div>
+            <div style="font-size:13px;color:#8a959e;margin-top:4px;">${brand.tagline}</div>
           </td>
         </tr>
         <tr>
           <td style="padding:6px 32px 4px;">
-            <h1 style="margin:0;font-size:20px;color:#173024;">购买成功，感谢支持！</h1>
+            <h1 style="margin:0;font-size:20px;color:${brand.ink};">购买成功，感谢支持！</h1>
             <p style="margin:8px 0 0;font-size:14px;color:#4a5560;line-height:1.7;">
-              你的 ChargePilot Pro 授权已开通。请保存下方激活码，在 App 中完成激活。
+              你的 ${brand.name} 授权已开通。请保存下方激活码，在 App 中完成激活。
             </p>
           </td>
         </tr>
         <tr>
           <td style="padding:16px 32px 0;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:14px;color:#4a5560;">
-              <tr><td class="label" style="padding:4px 0;color:#8a959e;width:96px;">授权方案</td><td style="padding:4px 0;">ChargePilot Pro ${escapeHtml(planName)}</td></tr>
+              <tr><td class="label" style="padding:4px 0;color:#8a959e;width:96px;">授权方案</td><td style="padding:4px 0;">${brand.name} ${escapeHtml(planName)}</td></tr>
               ${amountLine}
               <tr><td class="label" style="padding:4px 0;color:#8a959e;">购买时间</td><td style="padding:4px 0;">${formatBeijingTime(license.created_at)}</td></tr>
               ${validLine}
@@ -369,8 +444,8 @@ export function purchaseEmailHtml(license: LicenseRow): string {
         <tr>
           <td style="padding:20px 32px 0;">
             <div style="font-size:13px;color:#8a959e;margin-bottom:8px;">你的激活码</div>
-            <div style="background:#f0f7f2;border:1px dashed #9fc7ab;border-radius:10px;padding:16px;text-align:center;">
-              <span style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:20px;font-weight:700;letter-spacing:1px;color:#173024;">${escapeHtml(license.license_key)}</span>
+            <div style="background:${brand.codeBg};border:1px dashed ${brand.codeBorder};border-radius:10px;padding:16px;text-align:center;">
+              <span style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:20px;font-weight:700;letter-spacing:1px;color:${brand.ink};">${escapeHtml(license.license_key)}</span>
             </div>
           </td>
         </tr>
@@ -378,9 +453,7 @@ export function purchaseEmailHtml(license: LicenseRow): string {
           <td style="padding:20px 32px 0;">
             <div style="font-size:13px;color:#8a959e;margin-bottom:8px;">激活步骤</div>
             <ol style="margin:0;padding-left:20px;font-size:14px;color:#4a5560;line-height:1.9;">
-              <li>下载并安装 ChargePilot：<a href="https://zensoft.top/chargepilot/" style="color:#1a7f4b;">zensoft.top/chargepilot</a></li>
-              <li>打开 App，进入 Pro 激活界面（设置 → 版本方案 → 了解 Pro）</li>
-              <li>粘贴上方激活码，点击「激活」即可解锁全部功能</li>
+              ${brand.steps}
             </ol>
           </td>
         </tr>
@@ -388,8 +461,7 @@ export function purchaseEmailHtml(license: LicenseRow): string {
           <td style="padding:18px 32px 0;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fafbfc;border-radius:10px;padding:14px 16px;border:1px solid #edf0f3;">
               <tr><td style="font-size:13px;color:#4a5560;line-height:1.8;">
-                <strong style="color:#173024;">设备说明</strong>：一个激活码最多同时激活 3 台 Mac。
-                需要更换设备时，在 App 的「设置 → 版本方案」中点击「反激活此设备」即可释放名额，再到新设备上激活。
+                ${brand.deviceNote}
               </td></tr>
             </table>
           </td>
@@ -397,15 +469,15 @@ export function purchaseEmailHtml(license: LicenseRow): string {
         <tr>
           <td style="padding:22px 32px 30px;">
             <p style="margin:0;font-size:12px;color:#8a959e;line-height:1.8;">
-              首次购买适用 14 天退款政策。订单或激活问题请联系：
-              <a href="mailto:support@zensoft.top" style="color:#1a7f4b;">support@zensoft.top</a><br>
+              ${brand.refundLine}
+              <a href="mailto:${brand.supportEmail}" style="color:${brand.link};">${brand.supportEmail}</a><br>
               本邮件由系统自动发送，请勿直接回复。
             </p>
           </td>
         </tr>
       </table>
       <div style="max-width:560px;margin:14px auto 0;font-size:11px;color:#aab3ba;text-align:center;">
-        绍兴市臻书科技有限公司 · ChargePilot
+        ${brand.footer}
       </div>
     </td></tr>
   </table>
