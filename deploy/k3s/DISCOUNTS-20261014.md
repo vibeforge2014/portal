@@ -25,3 +25,5 @@ ChargePilot 购买页经既有 GitHub Actions 更新 Pages 及阿里云静态源
 发布程序应保留 Secret、hostAliases 和现有卷；不得用工作区模板覆盖这些运行配置。
 
 回退只切换应用目录，继续使用当前数据和有效转发。连接配置的原始 Secret/Deployment 位于新产物目录 `egress-before.json`（0600）；nginx 原配置保存在 `/etc/nginx/conf.d/zensoft-portal-products-acme.conf.before-discount-egress-20261014`。直接恢复原 Supabase URL 会重新触发家庭网络连接问题。
+
+线上验收已通过：后台创建百分比及固定减免码、列表显示、停用；微信与支付宝年度报价均验证原价 1900 分，八折 1520 分、减 0.29 元为 1871 分。390 像素手机购买页显示折后金额。临时测试码与会话均已清理，没有创建支付订单、扣款或发送邮件。
