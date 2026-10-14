@@ -19,7 +19,8 @@ function time(value: string | null) {
 }
 
 export function DiscountsPanel({ csrf, products }: { csrf: string; products: ManagedProduct[] }) {
-  const [form, setForm] = useState({ product: products.find(p => p.id === "chargepilot")?.id ?? products[0]?.id ?? "", plan: "", code: "", discountType: "percent" as DiscountType, value: "80", expiresAt: "" });  const [listing, setListing] = useState<Listing>({ codes: [], total: 0, page: 1, pageSize: 20 });
+  const [form, setForm] = useState({ product: products.find(p => p.id === "chargepilot")?.id ?? products[0]?.id ?? "", plan: "", code: "", discountType: "percent" as DiscountType, value: "80", expiresAt: "" });
+  const [listing, setListing] = useState<Listing>({ codes: [], total: 0, page: 1, pageSize: 20 });
   const [productFilter, setProductFilter] = useState("");
   const [page, setPage] = useState(1);
   const [reload, setReload] = useState(0);
@@ -82,7 +83,7 @@ export function DiscountsPanel({ csrf, products }: { csrf: string; products: Man
       <form onSubmit={create}>
         <div className="form-grid">
           <label className="field">适用产品<select value={form.product} onChange={event => setForm({ ...form, product: event.target.value, plan: event.target.value === "minuteflow" ? (form.plan === "annual" ? "" : form.plan) : form.plan })}>{products.map(product => <option key={product.id} value={product.id}>{product.copy.zh.name}</option>)}</select></label>
-          <label className="field">授权方案<select value={form.plan} onChange={event => setForm({ ...form, plan: event.target.value })}><option value="">所有授权方案</option>{form.product !== "minuteflow" && <option value="annual">年度授权</option>}<option value="lifetime">永久授权</option></select></label>
+          <label className="field">授权方案<select value={form.plan} onChange={event => setForm({ ...form, plan: event.target.value })}><option value="">所有授权方案</option>{form.product !== "minuteflow" && <option value="annual" disabled={form.product === "minuteflow"}>年度授权</option>}<option value="lifetime">永久授权</option></select></label>
           <label className="field">优惠方式<select value={form.discountType} onChange={event => setForm({ ...form, discountType: event.target.value as DiscountType, value: event.target.value === "percent" ? "80" : "10" })}><option value="percent">百分比折扣</option><option value="fixed">固定金额减免</option></select></label>
           <label className="field">{form.discountType === "percent" ? "支付比例（%，80 表示八折）" : "减免金额（元）"}<input type="number" min={form.discountType === "percent" ? "1" : "0.01"} max={form.discountType === "percent" ? "99" : "1000000"} step={form.discountType === "percent" ? "1" : "0.01"} required value={form.value} onChange={event => setForm({ ...form, value: event.target.value })} /></label>
           <label className="field wide">折扣码<div className="discount-code-input"><input value={form.code} onChange={event => setForm({ ...form, code: event.target.value.toUpperCase() })} placeholder="留空自动生成，或填写自定义码" maxLength={32} autoComplete="off" spellCheck={false} /><button type="button" disabled={busy} onClick={() => setForm({ ...form, code: randomCode() })}>生成随机码</button></div><span className="hint">4–32 位英文字母、数字、连字符或下划线，不区分大小写。</span></label>
